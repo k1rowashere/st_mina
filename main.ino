@@ -4,11 +4,13 @@
 #include <TouchScreen.h>
 #include <MCUFRIEND_kbv.h> // Hardware-specific library
 
-#define STEP_PIN 22              // Step pin
-#define DIR_PIN 24               // Direction pin
-#define EN_PIN 26                // Enable pin
-#define LOW_LIMIT_SWITCH_PIN 28  // Limit switch pin
-#define HIGH_LIMIT_SWITCH_PIN 30 // Limit switch pin
+#include "stepper.h"
+
+// #define STEP_PIN 22              // Step pin
+// #define DIR_PIN 24               // Direction pin
+// #define EN_PIN 26                // Enable pin
+// #define LOW_LIMIT_SWITCH_PIN 28  // Limit switch pin
+// #define HIGH_LIMIT_SWITCH_PIN 30 // Limit switch pin
 
 #define STEPS_PER_REV 200  // Number of steps per revolution
 #define CYLINDER_RADIUS 10 // Radius of the cylinder in mm
@@ -26,7 +28,6 @@
 #define YM 9
 #define XP 8
 
-// calibration data for the touch screen
 #define TS_MINX 110
 #define TS_MAXX 913
 #define TS_MINY 90
@@ -34,39 +35,24 @@
 
 MCUFRIEND_kbv tft;
 TouchScreen ts = TouchScreen(XP, YP, XM, YM, 300);
+Stepper stepper_1(22, 24, 26, 28, 30);
+Stepper stepper_2(23, 25, 27, 29, 31);
 
 int current_pos = 0;    // Current position in steps
 int current_action = 0; // TODO: 0 - idle, 1 - homming, 2 - moving, 3 - limit switch...
 
-int hold_counter = 0;      // Counter for holding the button
-int not_touch_counter = 0; // Counter for not touching the screen
-bool redraw_flag = true;   // Flag for redrawing the screen
+int hold_counter = 0;     // Counter for holding the button
+int no_touch_counter = 0; // Counter for not touching the screen
+bool redraw_flag = true;  // Flag for redrawing the screen
 
 void setup()
 {
-    pinMode(STEP_PIN, OUTPUT);
-    pinMode(DIR_PIN, OUTPUT);
-    pinMode(13, OUTPUT);
-
     // lcd setup
     Serial.begin(9600);
     uint16_t ID = tft.readID();
     tft.begin(ID);
     tft.setRotation(-45);
     tft.fillScreen(TFT_BLACK);
-}
-
-void step(int dir, int steps)
-{
-    // HIGH = clockwise, LOW = counter-clockwise
-    digitalWrite(DIR_PIN, dir);
-    for (int i = 0; i < steps; i++)
-    {
-        digitalWrite(STEP_PIN, HIGH);
-        delayMicroseconds(1000);
-        digitalWrite(STEP_PIN, LOW);
-        delayMicroseconds(1000);
-    }
 }
 
 // Convert Volume (ml) of product to number of steps from 0-pos
@@ -93,45 +79,6 @@ int steps_to_volume(int steps)
 
     // convert volume to ml
     return volume / 1000;
-}
-
-// move to 0_pos then go to set_pos
-void homming()
-{
-    // move in the opposite direction of the thread
-    digitalWrite(DIR_PIN, LOW);
-    while (digitalRead(LOW_LIMIT_SWITCH_PIN) == LOW)
-    {
-        digitalWrite(STEP_PIN, HIGH);
-        delayMicroseconds(1000);
-        digitalWrite(STEP_PIN, LOW);
-        delayMicroseconds(1000);
-    }
-    // read steps from eeprom 2 bytes
-    unsigned int steps = EEPROM.read(0) + (EEPROM.read(1) << 8);
-    // check if steps is set (default is 0xFFFF)
-    if (steps != 0xFFFF)
-    {
-        step(HIGH, steps);
-    }
-    else
-    {
-        // write 0 to eeprom
-        EEPROM.write(0, 0);
-        EEPROM.write(1, 0);
-    }
-}
-
-void goto_pos(int set_pos)
-{
-    // check if set_pos is greater than current_pos
-    if (set_pos > current_pos)
-        step(HIGH, set_pos - current_pos);
-    else
-        step(LOW, current_pos - set_pos);
-
-    // update current_pos
-    current_pos = set_pos;
 }
 
 TSPoint read_ts(void)
@@ -166,8 +113,8 @@ void loop()
     tft.setCursor(SCREEN_WIDTH / 4 * 3 - 19, 0);
     tft.print("(2)");
 
+    // draw first half
     tft.setTextSize(2);
-
     tft.setCursor(18, 24 * 2);
 
     switch (current_action)
@@ -190,14 +137,13 @@ void loop()
 
     tft.setTextColor(TFT_LIGHTGREY);
     tft.print("Fill V: ");
-    // tft.print(steps_to_volume(current_pos));
-    // clear the rest of the line
+    // draw volume
     if (redraw_flag)
     {
         tft.fillRect(tft.getCursorX(), tft.getCursorY(), SCREEN_WIDTH / 2 - tft.getCursorX(), 18, TFT_BLACK);
         redraw_flag = false;
     }
-
+    // tft.print(steps_to_volume(current_pos));
     tft.print(current_pos);
     tft.print(" ml");
 
@@ -270,12 +216,12 @@ void loop()
     else
     {
         // reset hold_counter if touch is released for some time
-        if (not_touch_counter > 50)
+        if (no_touch_counter > 50)
         {
             hold_counter = 0;
-            not_touch_counter = 0;
+            no_touch_counter = 0;
         }
         else
-            not_touch_counter++;
+            no_touch_counter++;
     }
 }
