@@ -5,18 +5,7 @@
 
 #include "headers/stepper.h"
 #include "headers/main.h"
-
-MCUFRIEND_kbv tft;
-TouchScreen ts = TouchScreen(XP, YP, XM, YM, 300);
-// (STEP_PIN, DIR_PIN, EN_PIN, LOW_LIMIT_SWITCH_PIN, HIGH_LIMIT_SWITCH_PIN)
-Stepper stepper_0(22, 24, 26, 28, 30);
-Stepper stepper_1(23, 25, 27, 29, 31);
-
-long current_pos[2];                      // Current position in steps
-Actions current_action[2] = {IDLE, IDLE}; // Current action
-
-bool redraw_set_vol = true; // Flag for redrawing the volume
-bool redraw_action = true;  // Flag for redrawing the action
+#include "headers/draw.h"
 
 // Convert Volume (ml) of product to number of steps from 0-pos
 long volume_to_steps(long volume)
@@ -77,6 +66,7 @@ void setup()
     tft.setRotation(-45);
     tft.fillScreen(TFT_BLACK);
     tft.drawFastVLine(SCREEN_WIDTH / 2, 0, SCREEN_HEIGHT, TFT_WHITE);
+
     // title
     tft.setTextSize(3);
     tft.setTextColor(TFT_WHITE);
@@ -87,75 +77,53 @@ void setup()
 
     // stepper setup
     current_action[0] = HOMMING;
-    current_action[1] = HOMMING;
+    Draw::draw_action(current_action[0]);
     current_pos[0] = stepper_0.homming();
-    current_pos[1] = stepper_1.homming();
     current_action[0] = IDLE;
+    Draw::draw_action(current_action[0]);
+
+    current_action[1] = HOMMING;
+    Draw::draw_action(current_action[1], SCREEN_WIDTH / 2);
+    current_pos[1] = stepper_1.homming();
     current_action[1] = IDLE;
 }
 
 void loop()
 {
-
-    // draw first half
-    tft.setTextSize(2);
-    tft.setCursor(18, 24 * 2);
+    long temp;
+    // if current_pos is not equal to the value in EEPROM, show save button
+    if (current_pos[0] != EEPROM.get(0, temp) || current_pos[1] != EEPROM.get(4, temp))
+    {
+        if (!not_saved)
+        {
+            not_saved = true;
+            tft.setTextSize(2);
+            tft.setTextColor(TFT_WHITE);
+            tft.fillRect(SCREEN_WIDTH / 2 - 75, SCREEN_HEIGHT - 50, 150, 50, TFT_BLACK);
+            tft.drawRoundRect(SCREEN_WIDTH / 2 - 75, SCREEN_HEIGHT - 50, 150, 50, 10, TFT_WHITE);
+            tft.setCursor(SCREEN_WIDTH / 2 - 12 * 2, SCREEN_HEIGHT - 50 + 25 - 8);
+            tft.print("Save");
+        }
+    }
+    else
+        not_saved = false;
 
     if (redraw_action)
     {
-        tft.fillRect(0, 24 * 2, SCREEN_WIDTH / 2, 24, TFT_BLACK);
         redraw_action = false;
+        Draw::draw_action(current_action[0]);
+        Draw::draw_action(current_action[1], SCREEN_WIDTH / 2);
     }
 
-    switch (current_action[0])
+    if (redraw_set_vol)
     {
-    case 0:
-        tft.setTextColor(TFT_WHITE);
-        tft.print("Idle");
-        break;
-    case 1:
-        tft.setTextColor(TFT_YELLOW);
-        tft.print("Homing");
-        break;
-    case 2:
-        tft.setTextColor(TFT_GREEN);
-        tft.print("Moving");
-        break;
+        redraw_set_vol = false;
+        Draw::draw_fill_v(current_pos[0]);
+        Draw::draw_fill_v(current_pos[1], SCREEN_WIDTH / 2);
     }
 
-    // draw set volume
-    {
-        tft.setCursor(18, tft.getCursorY() + 24);
-        tft.setTextColor(TFT_LIGHTGREY);
-        tft.print("Fill V: ");
-        if (redraw_set_vol)
-        {
-            tft.fillRect(tft.getCursorX(), tft.getCursorY(), SCREEN_WIDTH / 2 - tft.getCursorX(), 18, TFT_BLACK);
-            redraw_set_vol = false;
-        }
-        tft.print(steps_to_volume(current_pos[0]));
-        // tft.print(current_pos);
-        tft.print(" ml");
-    }
-
-    // + / - buttons
-    {
-        int height = SCREEN_HEIGHT / 2 - 25;
-
-        tft.drawRoundRect(SCREEN_WIDTH / 4 - 75, height, 50, 50, 10, TFT_WHITE);
-        tft.drawRoundRect(SCREEN_WIDTH / 4 + 25, height, 50, 50, 10, TFT_WHITE);
-        tft.setCursor(SCREEN_WIDTH / 4 - 50 - 6, height + 25 - 8);
-        tft.print("-");
-        tft.setCursor(SCREEN_WIDTH / 4 + 50 - 6, height + 25 - 8);
-        tft.print("+");
-    }
-
-    // save button bottom right of screen
-    {
-        tft.drawRoundRect(SCREEN_WIDTH / 4 * 3 - 75, SCREEN_HEIGHT - 25, 150, 50, 10, TFT_WHITE);
-        tft.setCursor(SCREEN_WIDTH / 4 * 3 - 75 + 50 - 6, SCREEN_HEIGHT - 25 + 25 - 8);
-        tft.print("Save");
-    }
+    Draw::draw_plus_minus_buttons();
+    Draw::draw_plus_minus_buttons(SCREEN_WIDTH / 2);
 
     // touch screen handling
     {
@@ -205,14 +173,41 @@ void loop()
                            SCREEN_HEIGHT / 2 + 25,
                            current_pos[0],
                            INCREMENT);
+            inc_dec_button(SCREEN_WIDTH / 4 * 3 - 75,
+                           SCREEN_WIDTH / 4 * 3 - 25,
+                           SCREEN_HEIGHT / 2 - 25,
+                           SCREEN_HEIGHT / 2 + 25,
+                           current_pos[1],
+                           DECREMENT);
+            inc_dec_button(SCREEN_WIDTH / 4 * 3 + 25,
+                           SCREEN_WIDTH / 4 * 3 + 75,
+                           SCREEN_HEIGHT / 2 - 25,
+                           SCREEN_HEIGHT / 2 + 25,
+                           current_pos[1],
+                           INCREMENT);
 
-            // save current_pos to eeprom button
-            if (tp.x > SCREEN_WIDTH / 4 * 3 - 75 &&
-                tp.x < SCREEN_WIDTH / 4 * 3 + 75 &&
-                tp.y > SCREEN_HEIGHT - 25 &&
-                tp.y < SCREEN_HEIGHT + 25)
+            // save current_pos to eeprom button if not_saved is true
+            if (not_saved &&
+                tp.x > SCREEN_WIDTH / 2 - 75 &&
+                tp.x < SCREEN_WIDTH / 2 + 75 &&
+                tp.y > SCREEN_HEIGHT - 50 &&
+                tp.y < SCREEN_HEIGHT)
             {
+                Serial.println("Saving...");
                 EEPROM.put(0, current_pos[0]);
+                EEPROM.put(4, current_pos[1]);
+                // draw saved
+                tft.fillRect(SCREEN_WIDTH / 2 - 75, SCREEN_HEIGHT - 50, 150, 50, TFT_BLACK);
+                tft.drawRoundRect(SCREEN_WIDTH / 2 - 75, SCREEN_HEIGHT - 50, 150, 50, 10, TFT_GREEN);
+                tft.setCursor(SCREEN_WIDTH / 2 - 12 * 2, SCREEN_HEIGHT - 50 + 25 - 8);
+                tft.setTextColor(TFT_GREEN);
+                tft.print("Saved");
+                not_saved = false;
+                delay(1000);
+                // remove saved
+                tft.fillRect(SCREEN_WIDTH / 2 - 75, SCREEN_HEIGHT - 50, 150, 50, TFT_BLACK);
+                // redraw vertical line
+                tft.drawFastVLine(SCREEN_WIDTH / 2, 0, SCREEN_HEIGHT, TFT_WHITE);
             }
 
             no_touch_counter = 0;

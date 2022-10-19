@@ -11,8 +11,8 @@ Stepper::Stepper(int STEP_PIN, int DIR_PIN, int EN_PIN, int LOW_LIMIT_SWITCH_PIN
       EN_PIN(EN_PIN),
       LOW_LIMIT_SWITCH_PIN(LOW_LIMIT_SWITCH_PIN),
       HIGH_LIMIT_SWITCH_PIN(HIGH_LIMIT_SWITCH_PIN),
-      // start EEPROM address at 0x00 and increment by 4 bytes for each instance
-      EEPROM_ADDRESS(0x00 + instance_count * 4)
+      // start EEPROM address at 0x00 and increment by sizeof long for each instance
+      EEPROM_ADDRESS(0x00 + instance_count * sizeof(long))
 {
     pinMode(STEP_PIN, OUTPUT);
     pinMode(DIR_PIN, OUTPUT);
@@ -67,12 +67,8 @@ long Stepper::homming()
     // read steps from eeprom (4 bytes)
     long steps = EEPROM.get(EEPROM_ADDRESS, steps);
 
-    // check if steps is set (default is 0xFFFF)
-    if (steps != 0xFFFF)
-    {
-        step(HIGH, steps);
-    }
-    else
+    // check if steps is not set (default is 0xFFFF)
+    if (steps == 0xFFFF)
     {
         // write zeros to eeprom
         EEPROM.put(EEPROM_ADDRESS, 0L);

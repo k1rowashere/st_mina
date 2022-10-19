@@ -33,7 +33,8 @@ enum Actions
     IDLE,
     HOMMING,
     MOVING,
-    LIMIT_SWITCH
+    FILLING,
+    STOPPED
 };
 
 enum Sign
@@ -41,3 +42,20 @@ enum Sign
     DECREMENT = -1,
     INCREMENT = 1
 };
+
+MCUFRIEND_kbv tft;
+TouchScreen ts = TouchScreen(XP, YP, XM, YM, 300);
+// (STEP_PIN, DIR_PIN, EN_PIN, LOW_LIMIT_SWITCH_PIN, HIGH_LIMIT_SWITCH_PIN)
+Stepper stepper_0(22, 24, 26, 28, 30);
+Stepper stepper_1(23, 25, 27, 29, 31);
+
+long current_pos[2];                      // Current position in steps
+Actions current_action[2] = {IDLE, IDLE}; // Current action
+
+bool redraw_set_vol = true; // Flag for redrawing the volume
+bool redraw_action = true;  // Flag for redrawing the action
+bool not_saved = false;     // Flag for saving the volume to EEPROM
+
+// forward declarations
+int steps_to_volume(long steps);
+long volume_to_steps(int volume);
