@@ -11,9 +11,9 @@ Stepper::Stepper(int STEP_PIN, int DIR_PIN, int EN_PIN, int LOW_LIMIT_SWITCH_PIN
       EN_PIN(EN_PIN),
       LOW_LIMIT_SWITCH_PIN(LOW_LIMIT_SWITCH_PIN),
       HIGH_LIMIT_SWITCH_PIN(HIGH_LIMIT_SWITCH_PIN),
-      EEPROM_ADDRESS(0x00 + instance_count * 2)
+      // start EEPROM address at 0x00 and increment by 4 bytes for each instance
+      EEPROM_ADDRESS(0x00 + instance_count * 4)
 {
-    // STEP_PIN, DIR_PIN, EN_PIN, LOW_LIMIT_SWITCH_PIN, HIGH_LIMIT_SWITCH_PIN
     pinMode(STEP_PIN, OUTPUT);
     pinMode(DIR_PIN, OUTPUT);
     pinMode(EN_PIN, OUTPUT);
@@ -37,38 +37,7 @@ void Stepper::step(int dir, int steps)
     }
 }
 
-void Stepper::homming()
-{
-    // move to 0_pos then go to set_pos (if set_pos is set)
-
-    // move in the opposite direction of the thread
-    digitalWrite(DIR_PIN, LOW);
-
-    while (digitalRead(LOW_LIMIT_SWITCH_PIN) == LOW)
-    {
-        digitalWrite(STEP_PIN, HIGH);
-        delayMicroseconds(1000);
-        digitalWrite(STEP_PIN, LOW);
-        delayMicroseconds(1000);
-    }
-
-    // read steps from eeprom 2 bytes
-    int steps = EEPROM.read(EEPROM_ADDRESS) + (EEPROM.read(EEPROM_ADDRESS + 1) << 8);
-
-    // check if steps is set (default is 0xFFFF)
-    if (steps != 0xFFFF)
-    {
-        step(HIGH, steps);
-    }
-    else
-    {
-        // write 0 to eeprom
-        EEPROM.write(EEPROM_ADDRESS, 0);
-        EEPROM.write(EEPROM_ADDRESS + 1, 0);
-    }
-}
-
-int Stepper::goto_pos(int set_pos, int current_pos)
+long Stepper::goto_pos(long set_pos, long current_pos)
 {
     // check if set_pos is greater than current_pos
     if (set_pos > current_pos)
@@ -78,4 +47,38 @@ int Stepper::goto_pos(int set_pos, int current_pos)
 
     // update current_pos
     return set_pos;
+}
+
+long Stepper::homming()
+{
+    // move to 0_pos then go to set_pos (if set_pos is set)
+
+    // move in the opposite direction of the thread
+    digitalWrite(DIR_PIN, LOW);
+
+    // while (digitalRead(LOW_LIMIT_SWITCH_PIN) == LOW)
+    // {
+    //     digitalWrite(STEP_PIN, HIGH);
+    //     delayMicroseconds(1000);
+    //     digitalWrite(STEP_PIN, LOW);
+    //     delayMicroseconds(1000);
+    // }
+
+    // read steps from eeprom (4 bytes)
+    long steps = EEPROM.get(EEPROM_ADDRESS, steps);
+
+    // check if steps is set (default is 0xFFFF)
+    if (steps != 0xFFFF)
+    {
+        step(HIGH, steps);
+    }
+    else
+    {
+        // write zeros to eeprom
+        EEPROM.put(EEPROM_ADDRESS, 0L);
+
+        steps = 0;
+    }
+
+    return goto_pos(steps, 0);
 }

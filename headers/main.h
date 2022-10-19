@@ -1,3 +1,4 @@
+#pragma once
 
 // #define STEP_PIN 22              // Step pin
 // #define DIR_PIN 24               // Direction pin
@@ -5,12 +6,13 @@
 // #define LOW_LIMIT_SWITCH_PIN 28  // Limit switch pin
 // #define HIGH_LIMIT_SWITCH_PIN 30 // Limit switch pin
 
-#define STEPS_PER_REV 200  // Number of steps per revolution
-#define CYLINDER_RADIUS 10 // Radius of the cylinder in mm
-#define THREAD_PITCH 1.25  // Thread pitch in mm
-#define HEIGHT 100         // Height of the cylinder in mm
-// #define STEPS_LIMIT (HEIGHT * STEPS_PER_REV / THREAD_PITCH) // Number of steps to limit switch from 0_pos
-#define MAX_POS 1000
+// convert defines to constexpr
+constexpr int STEPS_PER_REV = 200;  // Number of steps per revolution
+constexpr int CYLINDER_RADIUS = 36; // Radius of the cylinder in mm
+constexpr float THREAD_PITCH = 1.5; // Thread pitch in mm
+constexpr int HEIGHT = 300;         // Height of the cylinder in mm
+
+constexpr long MAX_POS = (long)STEPS_PER_REV * HEIGHT / THREAD_PITCH; // Max number of steps to limit switch from 0_pos
 
 #define SCREEN_WIDTH 480  // tft width
 #define SCREEN_HEIGHT 320 // tft height
@@ -32,4 +34,10 @@ enum Actions
     HOMMING,
     MOVING,
     LIMIT_SWITCH
+};
+
+enum Sign
+{
+    DECREMENT = -1,
+    INCREMENT = 1
 };

@@ -17,8 +17,8 @@ private:
 
 public:
     Stepper(int STEP_PIN, int DIR_PIN, int EN_PIN, int LOW_LIMIT_SWITCH_PIN, int HIGH_LIMIT_SWITCH_PIN);
-    void homming();
-    int goto_pos(int set_pos, int current_pos);
+    long homming();
+    long goto_pos(long set_pos, long current_pos);
 };
 
 #endif
