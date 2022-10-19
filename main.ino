@@ -1,59 +1,23 @@
-
 #include <EEPROM.h>
 #include <Adafruit_GFX.h> // Core graphics library
 #include <TouchScreen.h>
 #include <MCUFRIEND_kbv.h> // Hardware-specific library
 
-#include "stepper.h"
-
-// #define STEP_PIN 22              // Step pin
-// #define DIR_PIN 24               // Direction pin
-// #define EN_PIN 26                // Enable pin
-// #define LOW_LIMIT_SWITCH_PIN 28  // Limit switch pin
-// #define HIGH_LIMIT_SWITCH_PIN 30 // Limit switch pin
-
-#define STEPS_PER_REV 200  // Number of steps per revolution
-#define CYLINDER_RADIUS 10 // Radius of the cylinder in mm
-#define THREAD_PITCH 1.25  // Thread pitch in mm
-#define HEIGHT 100         // Height of the cylinder in mm
-// #define STEPS_LIMIT (HEIGHT * STEPS_PER_REV / THREAD_PITCH) // Number of steps to limit switch from 0_pos
-#define MAX_POS 1000
-
-#define SCREEN_WIDTH 480  // tft width
-#define SCREEN_HEIGHT 320 // tft height
-
-// touch screen
-#define YP A3
-#define XM A2
-#define YM 9
-#define XP 8
-
-#define TS_MINX 110
-#define TS_MAXX 913
-#define TS_MINY 90
-#define TS_MAXY 950
+#include "headers/stepper.h"
+#include "headers/main.h"
 
 MCUFRIEND_kbv tft;
 TouchScreen ts = TouchScreen(XP, YP, XM, YM, 300);
 Stepper stepper_1(22, 24, 26, 28, 30);
 Stepper stepper_2(23, 25, 27, 29, 31);
 
-int current_pos = 0;    // Current position in steps
-int current_action = 0; // TODO: 0 - idle, 1 - homming, 2 - moving, 3 - limit switch...
+int current_pos = 0; // Current position in steps
+Actions current_action = IDLE;
 
-int hold_counter = 0;     // Counter for holding the button
-int no_touch_counter = 0; // Counter for not touching the screen
-bool redraw_flag = true;  // Flag for redrawing the screen
-
-void setup()
-{
-    // lcd setup
-    Serial.begin(9600);
-    uint16_t ID = tft.readID();
-    tft.begin(ID);
-    tft.setRotation(-45);
-    tft.fillScreen(TFT_BLACK);
-}
+int hold_counter = 0;      // Counter for holding the button
+int no_touch_counter = 0;  // Counter for not touching the screen
+bool redraw_volume = true; // Flag for redrawing the volume
+bool redraw_action = true; // Flag for redrawing the action
 
 // Convert Volume (ml) of product to number of steps from 0-pos
 int volume_to_steps(int volume)
@@ -101,10 +65,19 @@ TSPoint read_ts(void)
     return tp;
 }
 
-void loop()
+void fill()
 {
-    tft.drawFastVLine(SCREEN_WIDTH / 2, 0, SCREEN_HEIGHT, TFT_WHITE);
+}
 
+void setup()
+{
+    // lcd setup
+    Serial.begin(9600);
+    uint16_t ID = tft.readID();
+    tft.begin(ID);
+    tft.setRotation(-45);
+    tft.fillScreen(TFT_BLACK);
+    tft.drawFastVLine(SCREEN_WIDTH / 2, 0, SCREEN_HEIGHT, TFT_WHITE);
     // title
     tft.setTextSize(3);
     tft.setTextColor(TFT_WHITE);
@@ -112,10 +85,20 @@ void loop()
     tft.print("(1)");
     tft.setCursor(SCREEN_WIDTH / 4 * 3 - 19, 0);
     tft.print("(2)");
+}
+
+void loop()
+{
 
     // draw first half
     tft.setTextSize(2);
     tft.setCursor(18, 24 * 2);
+
+    if (redraw_action)
+    {
+        tft.fillRect(0, 24 * 2, SCREEN_WIDTH / 2, 24, TFT_BLACK);
+        redraw_action = false;
+    }
 
     switch (current_action)
     {
@@ -138,13 +121,13 @@ void loop()
     tft.setTextColor(TFT_LIGHTGREY);
     tft.print("Fill V: ");
     // draw volume
-    if (redraw_flag)
+    if (redraw_volume)
     {
         tft.fillRect(tft.getCursorX(), tft.getCursorY(), SCREEN_WIDTH / 2 - tft.getCursorX(), 18, TFT_BLACK);
-        redraw_flag = false;
+        redraw_volume = false;
     }
-    // tft.print(steps_to_volume(current_pos));
-    tft.print(current_pos);
+    tft.print(steps_to_volume(current_pos));
+    // tft.print(current_pos);
     tft.print(" ml");
 
     // + / - buttons
@@ -160,10 +143,17 @@ void loop()
     }
 
     // read touch screen
-
     TSPoint p = read_ts();
     if (p.z > 100 && p.z < 1000)
     {
+
+        auto handle_hold_count = []()
+        {
+            hold_counter++;
+            delay(500 / (hold_counter < 20 ? hold_counter % 10 + 1 : 10));
+            redraw_volume = true;
+        };
+
         // check if +/- button is pressed
         // accelerated increment/ decrement of current_pos
         if (
@@ -173,19 +163,14 @@ void loop()
             p.y < SCREEN_HEIGHT / 2 + 25)
         {
             if (hold_counter > 10)
-                // current_pos -= volume_to_steps(10);
-                current_pos -= 10;
+                current_pos -= volume_to_steps(10);
             else
-                // current_pos -= volume_to_steps(1);
-                current_pos--;
+                current_pos -= volume_to_steps(1);
 
             if (current_pos < 0)
                 current_pos = 0;
 
-            hold_counter++;
-            delay(500 / (hold_counter < 20 ? hold_counter % 10 + 1 : 10));
-
-            redraw_flag = true;
+            handle_hold_count();
         }
         else if (
             p.x > SCREEN_WIDTH / 4 + 25 &&
@@ -194,23 +179,14 @@ void loop()
             p.y < SCREEN_HEIGHT / 2 + 25)
         {
             if (hold_counter > 10)
-            {
-                // current_pos += volume_to_steps(10);
-                current_pos += 10;
-            }
+                current_pos += volume_to_steps(10);
             else
-            {
-                // current_pos += volume_to_steps(1);
-                current_pos++;
-            }
+                current_pos += volume_to_steps(1);
 
             if (current_pos > MAX_POS)
                 current_pos = MAX_POS;
 
-            hold_counter++;
-            delay(500 / (hold_counter < 20 ? hold_counter % 10 + 1 : 10));
-
-            redraw_flag = true;
+            handle_hold_count();
         }
     }
     else

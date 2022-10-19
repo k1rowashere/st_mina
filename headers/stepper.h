@@ -9,6 +9,10 @@ private:
     const int EN_PIN;
     const int LOW_LIMIT_SWITCH_PIN;
     const int HIGH_LIMIT_SWITCH_PIN;
+    const int EEPROM_ADDRESS;
+
+    static int instance_count;
+
     void step(int dir, int steps);
 
 public:

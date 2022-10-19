@@ -3,15 +3,25 @@
 
 #include "headers/stepper.h"
 
-// constructor
+int Stepper::instance_count = 0;
+
 Stepper::Stepper(int STEP_PIN, int DIR_PIN, int EN_PIN, int LOW_LIMIT_SWITCH_PIN, int HIGH_LIMIT_SWITCH_PIN)
-    : STEP_PIN(STEP_PIN), DIR_PIN(DIR_PIN), EN_PIN(EN_PIN), LOW_LIMIT_SWITCH_PIN(LOW_LIMIT_SWITCH_PIN), HIGH_LIMIT_SWITCH_PIN(HIGH_LIMIT_SWITCH_PIN)
+    : STEP_PIN(STEP_PIN),
+      DIR_PIN(DIR_PIN),
+      EN_PIN(EN_PIN),
+      LOW_LIMIT_SWITCH_PIN(LOW_LIMIT_SWITCH_PIN),
+      HIGH_LIMIT_SWITCH_PIN(HIGH_LIMIT_SWITCH_PIN),
+      EEPROM_ADDRESS(0x00 + instance_count * 2)
 {
+    // STEP_PIN, DIR_PIN, EN_PIN, LOW_LIMIT_SWITCH_PIN, HIGH_LIMIT_SWITCH_PIN
     pinMode(STEP_PIN, OUTPUT);
     pinMode(DIR_PIN, OUTPUT);
     pinMode(EN_PIN, OUTPUT);
     pinMode(LOW_LIMIT_SWITCH_PIN, INPUT);
     pinMode(HIGH_LIMIT_SWITCH_PIN, INPUT);
+
+    // increment instance count for next stepper
+    instance_count++;
 }
 
 void Stepper::step(int dir, int steps)
@@ -27,11 +37,13 @@ void Stepper::step(int dir, int steps)
     }
 }
 
-// move to 0_pos then go to set_pos
 void Stepper::homming()
 {
+    // move to 0_pos then go to set_pos (if set_pos is set)
+
     // move in the opposite direction of the thread
     digitalWrite(DIR_PIN, LOW);
+
     while (digitalRead(LOW_LIMIT_SWITCH_PIN) == LOW)
     {
         digitalWrite(STEP_PIN, HIGH);
@@ -39,8 +51,10 @@ void Stepper::homming()
         digitalWrite(STEP_PIN, LOW);
         delayMicroseconds(1000);
     }
+
     // read steps from eeprom 2 bytes
-    unsigned int steps = EEPROM.read(0) + (EEPROM.read(1) << 8);
+    int steps = EEPROM.read(EEPROM_ADDRESS) + (EEPROM.read(EEPROM_ADDRESS + 1) << 8);
+
     // check if steps is set (default is 0xFFFF)
     if (steps != 0xFFFF)
     {
@@ -49,8 +63,8 @@ void Stepper::homming()
     else
     {
         // write 0 to eeprom
-        EEPROM.write(0, 0);
-        EEPROM.write(1, 0);
+        EEPROM.write(EEPROM_ADDRESS, 0);
+        EEPROM.write(EEPROM_ADDRESS + 1, 0);
     }
 }
 
