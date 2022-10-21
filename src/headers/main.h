@@ -7,7 +7,7 @@
 #include "draw.h"
 #include "touch.h"
 #include "../touch_handles.cpp"
-// #include "touch.h"
+
 // global state
 // TODO: reduce global state
 
@@ -22,7 +22,7 @@ bool not_saved = false;     // Flag for saving the volume to EEPROM
 Stepper stepper_0(22, 24, 26, 28, 30);
 Stepper stepper_1(23, 25, 27, 29, 31);
 
-void temp()
+void temp(uint16_t hold_counter)
 {
     Serial.println("temp");
 }

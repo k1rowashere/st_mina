@@ -5,17 +5,17 @@
 namespace Touch
 {
     // typedef an array of functions that take a TSPoint and return void
-    typedef void (*Handle)(TSPoint);
+    typedef void (*Handle)(TSPoint, uint16_t);
 
     TSPoint read();
 
     // must be implemented here to avoid linker errors
     // template function that will create a handler
-    template <uint16_t x_s, uint16_t y_s, uint16_t x_e, uint16_t y_e, void (*callback)()>
-    void handle(TSPoint tp)
+    template <uint16_t x_s, uint16_t y_s, uint16_t x_e, uint16_t y_e, void (*callback)(uint16_t)>
+    void handle(TSPoint tp, uint16_t hold_counter)
     {
         if (tp.x > x_s && tp.x < x_e && tp.y > y_s && tp.y < y_e)
-            callback();
+            callback(hold_counter);
     }
 
     // run all handlers

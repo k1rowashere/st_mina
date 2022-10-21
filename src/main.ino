@@ -1,13 +1,14 @@
 #include "headers/main.h"
 
 // create touch handlers list
+
 constexpr Touch::Handle handles[] = {
-    Touch::handle<SCREEN_WIDTH / 4 - 75, SCREEN_WIDTH / 4 - 25, SCREEN_HEIGHT / 2 - 25, SCREEN_HEIGHT / 2 + 25, temp>,
-    Touch::handle<SCREEN_WIDTH / 4 + 25, SCREEN_WIDTH / 4 + 75, SCREEN_HEIGHT / 2 - 25, SCREEN_HEIGHT / 2 + 25, temp>,
-    Touch::handle<SCREEN_WIDTH / 4 * 3 - 75, SCREEN_WIDTH / 4 * 3 - 25, SCREEN_HEIGHT / 2 - 25, SCREEN_HEIGHT / 2 + 25, temp>,
-    Touch::handle<SCREEN_WIDTH / 4 * 3 + 25, SCREEN_WIDTH / 4 * 3 + 75, SCREEN_HEIGHT / 2 - 25, SCREEN_HEIGHT / 2 + 25, temp>,
-    Touch::handle<SCREEN_WIDTH / 2 - 75, SCREEN_WIDTH / 2 - 25, SCREEN_HEIGHT - 50, SCREEN_HEIGHT, temp>,
-    Touch::handle<SCREEN_WIDTH / 2 + 25, SCREEN_WIDTH / 2 + 75, SCREEN_HEIGHT - 50, SCREEN_HEIGHT, temp>};
+    Touch::handle<SCREEN_WIDTH / 4 - 75, SCREEN_WIDTH / 4 - 25, SCREEN_HEIGHT / 2 - 25, SCREEN_HEIGHT / 2 + 25, Handlers::inc_dec<current_pos, DECREMENT>>,
+    Touch::handle<SCREEN_WIDTH / 4 + 25, SCREEN_WIDTH / 4 + 75, SCREEN_HEIGHT / 2 - 25, SCREEN_HEIGHT / 2 + 25, Handlers::inc_dec<current_pos, INCREMENT>>,
+    Touch::handle<SCREEN_WIDTH / 4 * 3 - 75, SCREEN_WIDTH / 4 * 3 - 25, SCREEN_HEIGHT / 2 - 25, SCREEN_HEIGHT / 2 + 25, Handlers::inc_dec<current_pos + 1, DECREMENT>>,
+    Touch::handle<SCREEN_WIDTH / 4 * 3 + 25, SCREEN_WIDTH / 4 * 3 + 75, SCREEN_HEIGHT / 2 - 25, SCREEN_HEIGHT / 2 + 25, Handlers::inc_dec<current_pos + 1, INCREMENT>>,
+    Touch::handle<SCREEN_WIDTH / 2 - 75, SCREEN_WIDTH / 2 - 25, SCREEN_HEIGHT - 50, SCREEN_HEIGHT, Handlers::apply>,
+    Touch::handle<SCREEN_WIDTH / 2 + 25, SCREEN_WIDTH / 2 + 75, SCREEN_HEIGHT - 50, SCREEN_HEIGHT, Handlers::cancel>};
 
 constexpr uint8_t handle_count = sizeof(handles) / sizeof(handles[0]);
 
