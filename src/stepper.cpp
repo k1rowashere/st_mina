@@ -32,8 +32,16 @@ void Stepper::home()
 
 void Stepper::step(Direction dir)
 {
+
+    // if limit switch is pressed, don't step
+    if (dir == FORWARD && digitalRead(HIGH_LIMIT_SWITCH_PIN) == HIGH)
+        return;
+    if (dir == BACKWARD && digitalRead(LOW_LIMIT_SWITCH_PIN) == HIGH)
+        return;
+
     // set direction
     digitalWrite(DIR_PIN, dir);
+
     // step once
     digitalWrite(STEP_PIN, HIGH);
     delayMicroseconds(1000);
@@ -48,6 +56,12 @@ void Stepper::step(Direction dir)
 
 uint32_t Stepper::update()
 {
+    // clamp set_pos to 0 and MAX_POS
+    if (set_pos > MAX_POS)
+        set_pos = MAX_POS;
+    else if (set_pos < 0)
+        set_pos = 0;
+
     // use micros() to create a delay between steps
     static uint64_t last_step_time = 0;
     if (micros() - last_step_time > 1000)

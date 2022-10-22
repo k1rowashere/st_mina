@@ -2,13 +2,16 @@
 #include "draw.h"
 #include "global.h"
 
-void inc_dec_0_0(uint16_t hold_counter);
-void inc_dec_0_1(uint16_t hold_counter);
-void inc_dec_1_0(uint16_t hold_counter);
-void inc_dec_1_1(uint16_t hold_counter);
+#define INC_DEC__(pos, sign) inc_dec_##pos##_##sign
+
+// macro to create +/- buttons handlers
+void INC_DEC__(0, NEGATIVE)();
+void INC_DEC__(0, POSITIVE)();
+void INC_DEC__(1, NEGATIVE)();
+void INC_DEC__(1, POSITIVE)();
 
 // apply button handler
-void apply(uint16_t hold_counter);
+void apply();
 
 // cancel button handler
-void cancel(uint16_t hold_counter);
+void cancel();

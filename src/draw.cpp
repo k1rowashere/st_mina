@@ -21,13 +21,13 @@ void Draw::title()
     tft.print("(2)");
 }
 
-void Draw::action(Actions action, uint16_t start_pos)
+void Draw::action(Actions action, uint16_t x_offset)
 {
     tft.setTextSize(2);
     tft.setTextColor(TFT_WHITE);
-    tft.setCursor(start_pos + 18, 24 * 2);
+    tft.setCursor(x_offset + 18, 24 * 2);
     // clear action area
-    tft.fillRect(start_pos + 1, 24 * 2, SCREEN_WIDTH / 2 - 2, 24, TFT_BLACK);
+    tft.fillRect(x_offset + 1, 24 * 2, SCREEN_WIDTH / 2 - 2, 24, TFT_BLACK);
     switch (action)
     {
     case IDLE:
@@ -52,20 +52,27 @@ void Draw::action(Actions action, uint16_t start_pos)
     }
 }
 
-void Draw::fill_v(uint32_t current_volume_pos, uint16_t start_pos)
+void Draw::volume_indicator(uint32_t curr_vol_pos, uint32_t set_vol_pos, uint16_t x_offset)
 {
-    tft.setCursor(start_pos + 18, 24 * 3);
+    // draw current volume indicator
+    tft.setCursor(x_offset + 18, 24 * 3);
     tft.setTextColor(TFT_LIGHTGREY);
-    tft.print("Fill V: ");
-    // redraw the volume if it has changed
+    tft.print("Curr vol: ");
     tft.fillRect(tft.getCursorX(), tft.getCursorY(), abs(SCREEN_WIDTH / 2 - tft.getCursorX()), 18, TFT_BLACK);
-    tft.print(steps_to_volume(current_volume_pos));
+    tft.print(steps_to_volume(curr_vol_pos));
+    tft.print(" ml");
+
+    // draw set volume indicator
+    tft.setCursor(x_offset + 18, 24 * 4);
+    tft.print("Set vol: ");
+    tft.fillRect(tft.getCursorX(), tft.getCursorY(), abs(SCREEN_WIDTH / 2 - tft.getCursorX()), 18, TFT_BLACK);
+    tft.print(steps_to_volume(set_vol_pos));
     tft.print(" ml");
 }
 
-void Draw::plus_minus_buttons(uint16_t start_pos)
+void Draw::plus_minus_buttons(uint16_t x_offset)
 {
-    int x = start_pos + SCREEN_WIDTH / 4, y = SCREEN_HEIGHT / 2 - 25;
+    int x = x_offset + SCREEN_WIDTH / 4, y = SCREEN_HEIGHT / 2 - 25;
 
     tft.setTextColor(TFT_WHITE);
     tft.drawRoundRect(x - 75, y, 50, 50, 10, TFT_WHITE);
@@ -78,28 +85,29 @@ void Draw::plus_minus_buttons(uint16_t start_pos)
 
 void Draw::apply_cancel_buttons()
 {
-    int x = SCREEN_WIDTH / 2, y = SCREEN_HEIGHT - 50;
-    int q = SCREEN_WIDTH / 4;
+    int x = SCREEN_WIDTH / 4, y = SCREEN_HEIGHT - 50;
 
     tft.setTextColor(TFT_WHITE);
-    tft.drawRoundRect(x - q - 50, y, 100, 50, 10, TFT_WHITE);
-    tft.drawRoundRect(x + q - 50, y, 100, 50, 10, TFT_WHITE);
-    tft.setCursor(q - 30, y + 25 - 8);
+    tft.drawRoundRect(x - 50, y, 100, 50, 10, TFT_WHITE);
+    tft.drawRoundRect(3 * x - 50, y, 100, 50, 10, TFT_WHITE);
+    tft.setCursor(x - 30, y + 25 - 8);
     tft.print("Apply");
-    tft.setCursor(x + q - 30, y + 25 - 8);
+    tft.setCursor(3 * x - 30, y + 25 - 8);
     tft.print("Cancel");
 }
 
 void Draw::apply_success()
 {
-    int x = SCREEN_WIDTH / 2, y = SCREEN_HEIGHT / 2 - 25;
-    // draw Confirmed
-    tft.fillRect(x - 75, y, 50, 50, TFT_WHITE);
-    tft.drawRoundRect(x - 75, y, 50, 50, 10, TFT_GREEN);
-    tft.setCursor(x - 50 - 30, y + 25 - 8);
+    int x = SCREEN_WIDTH / 4, y = SCREEN_HEIGHT - 50;
+
+    // clear apply button
+    tft.fillRect(0, SCREEN_HEIGHT - 50, SCREEN_WIDTH / 2 - 1, 50, TFT_BLACK);
+
+    // draw success
     tft.setTextColor(TFT_GREEN);
+    tft.drawRoundRect(x - 50, y, 100, 50, 10, TFT_GREEN);
+    tft.setCursor(x - 42, y + 25 - 8);
     tft.print("Applied");
-    delay(1000);
 }
 
 void Draw::clear_buttons()

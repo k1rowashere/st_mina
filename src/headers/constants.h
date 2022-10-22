@@ -37,6 +37,13 @@ enum Actions
 
 enum Sign
 {
-    DECREMENT = -1,
-    INCREMENT = 1
+    NEGATIVE = -1,
+    POSITIVE = 1
+};
+
+// TODO: check if this is the correct direction
+enum Direction
+{
+    FORWARD,
+    BACKWARD
 };

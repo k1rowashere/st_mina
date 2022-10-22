@@ -1,121 +1,59 @@
 #include "headers/touch_handles.h"
 
-void inc_dec(uint16_t hold_counter, uint32_t &value, Sign sign)
-{
-    if (hold_counter > 20)
-        stepper_0.set_pos -= volume_to_steps(40);
-    else if (hold_counter > 10)
-        current_pos[0] -= volume_to_steps(10);
-    else
-        current_pos[0] -= volume_to_steps(1);
+// +/- buttons macro
+#define INC_DEC(pos, sign)                                     \
+    void inc_dec_##pos##_##sign()                              \
+    {                                                          \
+        static uint16_t hold_counter(0);                       \
+        static uint32_t last_call_ms(0);                       \
+                                                               \
+        if (millis() - last_call_ms > 1000)                    \
+            hold_counter = 0;                                  \
+        if ((millis() - last_call_ms) > 200)                   \
+        {                                                      \
+            if (hold_counter > 20)                             \
+                G::set_pos[pos] += sign * volume_to_steps(50); \
+            else if (hold_counter > 10)                        \
+                G::set_pos[pos] += sign * volume_to_steps(10); \
+            else                                               \
+                G::set_pos[pos] += sign * volume_to_steps(1);  \
+                                                               \
+            if (G::set_pos[pos] < 0)                           \
+                G::set_pos[pos] = 0;                           \
+            else if (G::set_pos[pos] > MAX_POS)                \
+                G::set_pos[pos] = MAX_POS;                     \
+                                                               \
+            hold_counter++;                                    \
+            G::redraw_set_vol = true;                          \
+        }                                                      \
+        last_call_ms = millis();                               \
+    }
 
-    // clamp value 0-MAX_POS
-    if (current_pos[0] > MAX_POS)
-        current_pos[0] = MAX_POS;
-    else if (current_pos[0] < 0)
-        current_pos[0] = 0;
-
-    delay(500 / (hold_counter < 20 ? hold_counter % 10 + 1 : 10));
-    redraw_set_vol = true;
-}
-
-// TODO: remove duplicate code
-void inc_dec_0_0(uint16_t hold_counter)
-{
-    if (hold_counter > 20)
-        stepper_0.set_pos -= volume_to_steps(40);
-    else if (hold_counter > 10)
-        current_pos[0] -= volume_to_steps(10);
-    else
-        current_pos[0] -= volume_to_steps(1);
-
-    // clamp value 0-MAX_POS
-    if (current_pos[0] > MAX_POS)
-        current_pos[0] = MAX_POS;
-    else if (current_pos[0] < 0)
-        current_pos[0] = 0;
-
-    delay(500 / (hold_counter < 20 ? hold_counter % 10 + 1 : 10));
-    redraw_set_vol = true;
-}
-
-void inc_dec_0_1(uint16_t hold_counter)
-{
-    if (hold_counter > 20)
-        current_pos[0] += volume_to_steps(40);
-    else if (hold_counter > 10)
-        current_pos[0] += volume_to_steps(10);
-    else
-        current_pos[0] += volume_to_steps(1);
-
-    // clamp value 0-MAX_POS
-    if (current_pos[0] > MAX_POS)
-        current_pos[0] = MAX_POS;
-    else if (current_pos[0] < 0)
-        current_pos[0] = 0;
-
-    delay(500 / (hold_counter < 20 ? hold_counter % 10 + 1 : 10));
-    redraw_set_vol = true;
-}
-
-void inc_dec_1_0(uint16_t hold_counter)
-{
-    if (hold_counter > 20)
-        current_pos[1] -= volume_to_steps(40);
-    else if (hold_counter > 10)
-        current_pos[1] -= volume_to_steps(10);
-    else
-        current_pos[1] -= volume_to_steps(1);
-
-    // clamp value 0-MAX_POS
-    if (current_pos[1] > MAX_POS)
-        current_pos[1] = MAX_POS;
-    else if (current_pos[1] < 0)
-        current_pos[1] = 0;
-
-    delay(500 / (hold_counter < 20 ? hold_counter % 10 + 1 : 10));
-    redraw_set_vol = true;
-}
-
-void inc_dec_1_1(uint16_t hold_counter)
-{
-    if (hold_counter > 20)
-        current_pos[1] += volume_to_steps(40);
-    else if (hold_counter > 10)
-        current_pos[1] += volume_to_steps(10);
-    else
-        current_pos[1] += volume_to_steps(1);
-
-    // clamp value 0-MAX_POS
-    if (current_pos[1] > MAX_POS)
-        current_pos[1] = MAX_POS;
-    else if (current_pos[1] < 0)
-        current_pos[1] = 0;
-
-    delay(500 / (hold_counter < 20 ? hold_counter % 10 + 1 : 10));
-    redraw_set_vol = true;
-}
+// define +/- buttons handlers
+INC_DEC(0, NEGATIVE)
+INC_DEC(0, POSITIVE)
+INC_DEC(1, NEGATIVE)
+INC_DEC(1, POSITIVE)
 
 // apply button handler
-void apply(uint16_t hold_counter)
+void apply()
 {
-    EEPROM.put(0, current_pos[0]);
-    EEPROM.put(4, current_pos[1]);
 
-    stepper_0.set_pos = current_pos[0];
-    stepper_1.set_pos = current_pos[1];
+    G::stepper_0.set_pos = G::set_pos[0];
+    G::stepper_1.set_pos = G::set_pos[1];
 
-    Draw::clear_buttons();
+    // save volume to EEPROM
+    EEPROM.put(0, G::set_pos[0]);
+    EEPROM.put(4, G::set_pos[1]);
+    Draw::apply_success();
 }
 
 // cancel button handler
-void cancel(uint16_t hold_counter)
+void cancel()
 {
-    EEPROM.get(0, current_pos[0]);
-    EEPROM.get(4, current_pos[1]);
+    // reset set_pos to position in EEPROM
+    EEPROM.get(0, G::set_pos[0]);
+    EEPROM.get(4, G::set_pos[1]);
 
-    stepper_0.set_pos = current_pos[0];
-    stepper_1.set_pos = current_pos[1];
-
-    Draw::clear_buttons();
+    G::redraw_set_vol = true;
 }

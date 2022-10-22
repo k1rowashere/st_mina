@@ -25,39 +25,20 @@ TSPoint Touch::read(void)
     return tp;
 }
 
-// template <uint16_t x_s, uint16_t y_s, uint16_t x_e, uint16_t y_e, void (*callback)()>
-// void Touch::handle(TSPoint tp)
-// {
-//     if (tp.x > x_s && tp.x < x_e && tp.y > y_s && tp.y < y_e)
-//         callback();
-// }
-
-void Touch::run_handles(const Touch::Handle handler[], uint8_t count)
+// template <typename... Args>
+void Touch::run_handles(const Handle handles[], uint8_t count)
 {
-    static uint16_t hold_counter(0);
-    static uint16_t no_touch_counter(0);
-
     TSPoint tp = Touch::read();
 
     // if the touch is pressed
     if (tp.z > MINPRESSURE && tp.z < MAXPRESSURE)
     {
-        Serial.println("touched");
-
         // call all handlers
-        for (uint8_t i = 0; i < count; i++)
-            handler[i](tp, hold_counter);
-
-        hold_counter++;
-    }
-    else
-    {
-        if (no_touch_counter > 30)
+        for (size_t i = 0; i < count; i++)
         {
-            hold_counter = 0;
-            no_touch_counter = 0;
+            Handle h = handles[i];
+            if (tp.x > h.x_s && tp.x < h.x_e && tp.y > h.y_s && tp.y < h.y_e)
+                h.callback();
         }
-        else
-            no_touch_counter++;
     }
 }
