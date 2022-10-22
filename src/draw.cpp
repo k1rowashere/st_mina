@@ -1,5 +1,16 @@
 #include "headers/draw.h"
 
+MCUFRIEND_kbv tft;
+
+void Draw::init()
+{
+    uint16_t ID = tft.readID();
+    tft.begin(ID);
+    tft.setRotation(-45);
+    tft.fillScreen(TFT_BLACK);
+    tft.drawFastVLine(SCREEN_WIDTH / 2, 0, SCREEN_HEIGHT, TFT_WHITE);
+}
+
 void Draw::title()
 {
     tft.setTextSize(3);
@@ -67,14 +78,15 @@ void Draw::plus_minus_buttons(uint16_t start_pos)
 
 void Draw::apply_cancel_buttons()
 {
-    int x = SCREEN_WIDTH / 2, y = SCREEN_HEIGHT / 2 - 25;
+    int x = SCREEN_WIDTH / 2, y = SCREEN_HEIGHT - 50;
+    int q = SCREEN_WIDTH / 4;
 
     tft.setTextColor(TFT_WHITE);
-    tft.drawRoundRect(x - 75, y, 50, 50, 10, TFT_WHITE);
-    tft.drawRoundRect(x + 25, y, 50, 50, 10, TFT_WHITE);
-    tft.setCursor(x - 50 - 30, y + 25 - 8);
+    tft.drawRoundRect(x - q - 50, y, 100, 50, 10, TFT_WHITE);
+    tft.drawRoundRect(x + q - 50, y, 100, 50, 10, TFT_WHITE);
+    tft.setCursor(q - 30, y + 25 - 8);
     tft.print("Apply");
-    tft.setCursor(x + 50 - 30, y + 25 - 8);
+    tft.setCursor(x + q - 30, y + 25 - 8);
     tft.print("Cancel");
 }
 

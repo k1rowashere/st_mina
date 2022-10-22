@@ -1,5 +1,5 @@
 #pragma once
-// for pin numbers
+
 #include <Arduino.h>
 
 constexpr uint16_t STEPS_PER_REV = 200;  // Number of steps per revolution

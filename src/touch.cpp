@@ -1,8 +1,9 @@
 #include "headers/touch.h"
 
+TouchScreen ts = TouchScreen(XP, YP, XM, YM, 300);
+
 TSPoint Touch::read(void)
 {
-    static TouchScreen ts = TouchScreen(XP, YP, XM, YM, 300);
     TSPoint tp = ts.getPoint();
 
     // restore shared pins
@@ -41,9 +42,13 @@ void Touch::run_handles(const Touch::Handle handler[], uint8_t count)
     // if the touch is pressed
     if (tp.z > MINPRESSURE && tp.z < MAXPRESSURE)
     {
+        Serial.println("touched");
+
         // call all handlers
         for (uint8_t i = 0; i < count; i++)
             handler[i](tp, hold_counter);
+
+        hold_counter++;
     }
     else
     {

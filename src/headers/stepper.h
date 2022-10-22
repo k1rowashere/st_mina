@@ -15,6 +15,7 @@ public:
     Stepper(uint8_t STEP_PIN, uint8_t DIR_PIN, uint8_t EN_PIN, uint8_t LOW_LIMIT_SWITCH_PIN, uint8_t HIGH_LIMIT_SWITCH_PIN);
     uint32_t set_pos = 0;
     uint32_t update();
+    void home();
 
 private:
     const uint8_t STEP_PIN;
@@ -24,7 +25,6 @@ private:
     const uint8_t HIGH_LIMIT_SWITCH_PIN;
 
     uint32_t current_pos = 0;
-    static uint8_t instance_count;
 
     void step(Direction dir);
 };

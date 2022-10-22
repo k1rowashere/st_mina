@@ -5,7 +5,7 @@
 #include "helpers.h"
 namespace Draw
 {
-    MCUFRIEND_kbv tft;
+    void init();
     void title();
     void action(Actions action, uint16_t start_pos = 0);
     void fill_v(uint32_t current_volume_pos, uint16_t start_pos = 0);
@@ -13,5 +13,4 @@ namespace Draw
     void apply_cancel_buttons();
     void apply_success();
     void clear_buttons();
-
 }

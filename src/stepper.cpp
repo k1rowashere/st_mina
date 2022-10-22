@@ -1,7 +1,5 @@
 #include "headers/stepper.h"
 
-uint8_t Stepper::instance_count = 0;
-
 Stepper::Stepper(uint8_t STEP_PIN, uint8_t DIR_PIN, uint8_t EN_PIN, uint8_t LOW_LIMIT_SWITCH_PIN, uint8_t HIGH_LIMIT_SWITCH_PIN)
     : STEP_PIN(STEP_PIN),
       DIR_PIN(DIR_PIN),
@@ -14,9 +12,12 @@ Stepper::Stepper(uint8_t STEP_PIN, uint8_t DIR_PIN, uint8_t EN_PIN, uint8_t LOW_
     pinMode(EN_PIN, OUTPUT);
     pinMode(LOW_LIMIT_SWITCH_PIN, INPUT);
     pinMode(HIGH_LIMIT_SWITCH_PIN, INPUT);
+}
 
+void Stepper::home()
+{
     // home the stepper
-    digitalWrite(DIR_PIN, BACKWARD);
+    // digitalWrite(DIR_PIN, BACKWARD);
 
     // goto 0_pos
     // while (digitalRead(LOW_LIMIT_SWITCH_PIN) == LOW)
@@ -26,24 +27,7 @@ Stepper::Stepper(uint8_t STEP_PIN, uint8_t DIR_PIN, uint8_t EN_PIN, uint8_t LOW_
     //     digitalWrite(STEP_PIN, LOW);
     //     delayMicroseconds(1000);
     // }
-
-    // start EEPROM address at 0x00 and increment by sizeof long for each instance
-    const uint16_t EEPROM_ADDRESS = 0x00 + instance_count * sizeof(uint32_t);
-    // read steps from eeprom (4 bytes)
-    uint32_t steps = EEPROM.get(EEPROM_ADDRESS, steps);
-    // check if steps is not set (default is 0xFFFF)
-    if (steps == 0xFFFF)
-    {
-        // write zeros to eeprom
-        EEPROM.put(EEPROM_ADDRESS, 0L);
-
-        steps = 0;
-    }
-
-    set_pos = steps;
-
-    // increment instance count for next stepper
-    instance_count++;
+    delay(1000);
 }
 
 void Stepper::step(Direction dir)
@@ -54,7 +38,12 @@ void Stepper::step(Direction dir)
     digitalWrite(STEP_PIN, HIGH);
     delayMicroseconds(1000);
     digitalWrite(STEP_PIN, LOW);
-    delayMicroseconds(1000);
+
+    // increment or decrement steps
+    if (dir == FORWARD)
+        current_pos++;
+    else
+        current_pos--;
 }
 
 uint32_t Stepper::update()

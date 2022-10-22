@@ -1,16 +1,12 @@
 #include "headers/main.h"
 
-// create touch handlers list
-
 constexpr Touch::Handle handles[] = {
-    Touch::handle<SCREEN_WIDTH / 4 - 75, SCREEN_WIDTH / 4 - 25, SCREEN_HEIGHT / 2 - 25, SCREEN_HEIGHT / 2 + 25, Handlers::inc_dec<current_pos, DECREMENT>>,
-    Touch::handle<SCREEN_WIDTH / 4 + 25, SCREEN_WIDTH / 4 + 75, SCREEN_HEIGHT / 2 - 25, SCREEN_HEIGHT / 2 + 25, Handlers::inc_dec<current_pos, INCREMENT>>,
-    Touch::handle<SCREEN_WIDTH / 4 * 3 - 75, SCREEN_WIDTH / 4 * 3 - 25, SCREEN_HEIGHT / 2 - 25, SCREEN_HEIGHT / 2 + 25, Handlers::inc_dec<current_pos + 1, DECREMENT>>,
-    Touch::handle<SCREEN_WIDTH / 4 * 3 + 25, SCREEN_WIDTH / 4 * 3 + 75, SCREEN_HEIGHT / 2 - 25, SCREEN_HEIGHT / 2 + 25, Handlers::inc_dec<current_pos + 1, INCREMENT>>,
-    Touch::handle<SCREEN_WIDTH / 2 - 75, SCREEN_WIDTH / 2 - 25, SCREEN_HEIGHT - 50, SCREEN_HEIGHT, Handlers::apply>,
-    Touch::handle<SCREEN_WIDTH / 2 + 25, SCREEN_WIDTH / 2 + 75, SCREEN_HEIGHT - 50, SCREEN_HEIGHT, Handlers::cancel>};
-
-constexpr uint8_t handle_count = sizeof(handles) / sizeof(handles[0]);
+    Touch::handle<SCREEN_WIDTH / 4 - 75, SCREEN_WIDTH / 4 - 25, SCREEN_HEIGHT / 2 - 25, SCREEN_HEIGHT / 2 + 25, inc_dec_0_0>,
+    Touch::handle<SCREEN_WIDTH / 4 + 25, SCREEN_WIDTH / 4 + 75, SCREEN_HEIGHT / 2 - 25, SCREEN_HEIGHT / 2 + 25, inc_dec_0_1>,
+    Touch::handle<SCREEN_WIDTH / 4 - 75, SCREEN_WIDTH / 4 - 25, SCREEN_HEIGHT / 2 + 25, SCREEN_HEIGHT / 2 + 75, inc_dec_1_0>,
+    Touch::handle<SCREEN_WIDTH / 4 + 25, SCREEN_WIDTH / 4 + 75, SCREEN_HEIGHT / 2 + 25, SCREEN_HEIGHT / 2 + 75, inc_dec_1_1>,
+    Touch::handle<SCREEN_WIDTH / 2 - 75, SCREEN_WIDTH / 2 - 25, SCREEN_HEIGHT - 50, SCREEN_HEIGHT, apply>,
+    Touch::handle<SCREEN_WIDTH / 2 + 25, SCREEN_WIDTH / 2 + 75, SCREEN_HEIGHT - 50, SCREEN_HEIGHT, cancel>};
 
 void fill()
 {
@@ -18,25 +14,27 @@ void fill()
 
 void setup()
 {
-    // lcd setup
     Serial.begin(9600);
-    uint16_t ID = Draw::tft.readID();
-    Draw::tft.begin(ID);
-    Draw::tft.setRotation(-45);
-    Draw::tft.fillScreen(TFT_BLACK);
-    Draw::tft.drawFastVLine(SCREEN_WIDTH / 2, 0, SCREEN_HEIGHT, TFT_WHITE);
 
+    // lcd setup
+    Draw::init();
     Draw::title();
     Draw::action(HOMMING, 0);
+    Draw::action(IDLE, SCREEN_WIDTH / 2);
+
+    // stepper setup
+    stepper_0.home();
+    Draw::action(IDLE, 0);
     Draw::action(HOMMING, SCREEN_WIDTH / 2);
+    stepper_1.home();
+
+    // read from eeprom
+    stepper_0.set_pos = EEPROM.get(0, stepper_0.set_pos);
+    stepper_1.set_pos = EEPROM.get(4, stepper_1.set_pos);
 }
 
 void loop()
 {
-    // static bool redraw_set_vol = true; // Flag for redrawing the volume
-    // static bool redraw_action = true;  // Flag for redrawing the action
-    // static bool not_saved = false;     // Flag for saving the volume to EEPROM
-
     // update steppers
     current_pos[0] = stepper_0.update();
     current_pos[1] = stepper_1.update();
@@ -53,7 +51,10 @@ void loop()
         }
     }
     else
+    {
         not_saved = false;
+        Draw::clear_buttons();
+    }
 
     if (redraw_action)
     {
@@ -73,5 +74,5 @@ void loop()
     Draw::plus_minus_buttons(SCREEN_WIDTH / 2);
 
     // touch screen handling
-    Touch::run_handles(handles, handle_count);
+    Touch::run_handles(handles, sizeof(handles) / sizeof(handles[0]));
 }
