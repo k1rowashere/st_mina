@@ -15,3 +15,6 @@ void apply();
 
 // cancel button handler
 void cancel();
+
+// lock button handler
+void lock();

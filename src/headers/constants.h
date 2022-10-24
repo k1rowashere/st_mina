@@ -29,7 +29,7 @@ constexpr uint32_t MAX_POS = (uint32_t)STEPS_PER_REV * HEIGHT / THREAD_PITCH; //
 enum Actions
 {
     IDLE,
-    HOMMING,
+    HOMING,
     MOVING,
     FILLING,
     STOPPED

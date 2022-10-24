@@ -7,10 +7,11 @@ namespace Touch
     struct Handle
     {
         uint16_t x_s;
-        uint16_t x_e;
         uint16_t y_s;
-        uint16_t y_e;
+        uint16_t w;
+        uint16_t h;
         void (*callback)();
+        bool &condition;
     };
 
     TSPoint read();

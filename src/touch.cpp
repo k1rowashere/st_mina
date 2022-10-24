@@ -37,8 +37,14 @@ void Touch::run_handles(const Handle handles[], uint8_t count)
         for (size_t i = 0; i < count; i++)
         {
             Handle h = handles[i];
-            if (tp.x > h.x_s && tp.x < h.x_e && tp.y > h.y_s && tp.y < h.y_e)
+            if (tp.x > h.x_s &&
+                tp.x < h.x_s + h.w &&
+                tp.y > h.y_s &&
+                tp.y < h.y_s + h.h &&
+                h.condition)
+            {
                 h.callback();
+            }
         }
     }
 }
