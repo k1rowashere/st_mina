@@ -1,33 +1,24 @@
 #include "headers/main.h"
 
-// init touchscreen event handlers
-bool always_true = true;
-// x0, x1, y0, y1, callback, condition
-constexpr Touch::Handle handles[] = {
-    {SCREEN_WIDTH / 4 - 75, SCREEN_HEIGHT / 2 - 25, 50, 50, INC_DEC__(0, NEGATIVE), G::pos_unlock},
-    {SCREEN_WIDTH / 4 + 25, SCREEN_HEIGHT / 2 - 25, 50, 50, INC_DEC__(0, POSITIVE), G::pos_unlock},
-    {SCREEN_WIDTH / 4 * 3 - 75, SCREEN_HEIGHT / 2 - 25, 50, 50, INC_DEC__(1, NEGATIVE), G::pos_unlock},
-    {SCREEN_WIDTH / 4 * 3 + 25, SCREEN_HEIGHT / 2 - 25, 50, 50, INC_DEC__(1, POSITIVE), G::pos_unlock},
-    {SCREEN_WIDTH / 4 - 50, SCREEN_HEIGHT - 50, 100, 50, apply, G::not_saved},
-    {SCREEN_WIDTH / 4 * 3 - 50, SCREEN_HEIGHT - 50, 100, 50, cancel, G::not_saved},
-    {0, SCREEN_HEIGHT - 100, 50, 50, lock, always_true},
-};
-
-void fill()
-{
-}
-
 void setup()
 {
     Serial.begin(9600);
 
     // lcd setup
     Draw::init();
-    Draw::lock_button(G::pos_unlock ? TFT_GREEN : TFT_RED);
 
-    // stepper setup
-    G::stepper_0.home();
-    G::stepper_1.home();
+    // init steppers
+    G::current_action[0] = HOMING;
+    G::current_action[1] = HOMING;
+
+    // attach interrupts
+    constexpr uint8_t pins[] = {PEDAL_PIN,
+                                LOW_LIMIT_SWITCH_PIN_0,
+                                HIGH_LIMIT_SWITCH_PIN_0,
+                                LOW_LIMIT_SWITCH_PIN_1,
+                                HIGH_LIMIT_SWITCH_PIN_1};
+    for (uint8_t i : pins)
+        attachInterrupt(digitalPinToInterrupt(i), Filler::handle_interrupt, RISING);
 
     // read from eeprom
     G::vis_set_pos[0] = EEPROM.get(0, G::stepper_0.set_pos);
@@ -36,18 +27,25 @@ void setup()
 
 void loop()
 {
-    // update steppers
+    // update steppers (move to set_pos || home on startup)
+    noInterrupts();
     G::stepper_0.update();
     G::stepper_1.update();
+    interrupts();
 
+    // Filler::error()
+    G::filler_0.error();
+    G::filler_1.error();
+
+    // draw on lcd
     Draw::action();
     Draw::plus_minus_buttons(0, G::pos_unlock ? TFT_WHITE : TFT_DARKGREY);
     Draw::plus_minus_buttons(SCREEN_WIDTH / 2, G::pos_unlock ? TFT_WHITE : TFT_DARKGREY);
-    Draw::lock_button(G::pos_unlock ? TFT_GREEN : TFT_RED);
+    Draw::lock_button(G::pos_unlock ? TFT_WHITE : TFT_RED);
 
     // TODO: remove temp variable
     long temp;
-    // if current_pos is not equal to the value in EEPROM, show save and cancel buttons
+    // if set_pos is not equal to the value in EEPROM, show save and cancel buttons
     if (G::vis_set_pos[0] != EEPROM.get(0, temp) || G::vis_set_pos[1] != EEPROM.get(4, temp))
     {
         // if the buttons are not already drawn, draw them

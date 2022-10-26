@@ -10,18 +10,23 @@ public:
     uint32_t set_pos = 0;
     uint32_t current_pos = 0;
 
-    Stepper(uint8_t STEP_PIN, uint8_t DIR_PIN, uint8_t EN_PIN, uint8_t LOW_LIMIT_SWITCH_PIN, uint8_t HIGH_LIMIT_SWITCH_PIN);
+    struct Pins
+    {
+        uint8_t STEP;
+        uint8_t DIR;
+        uint8_t EN;
+        uint8_t LOW_LIMIT_SWITCH;
+        uint8_t HIGH_LIMIT_SWITCH;
+    };
+
+    Stepper(Pins pins);
     void update();
-    void home();
+    void fill_cycle();
 
 private:
-    const uint8_t STEP_PIN;
-    const uint8_t DIR_PIN;
-    const uint8_t EN_PIN;
-    const uint8_t LOW_LIMIT_SWITCH_PIN;
-    const uint8_t HIGH_LIMIT_SWITCH_PIN;
+    const Pins pins;
     uint64_t last_step_time = 0;
 
+    const uint8_t instance_id;
     static uint8_t instance_count;
-    uint8_t instance_id;
 };

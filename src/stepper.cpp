@@ -5,56 +5,55 @@
 // instance count
 uint8_t Stepper::instance_count = 0;
 
-Stepper::Stepper(uint8_t STEP_PIN, uint8_t DIR_PIN, uint8_t EN_PIN, uint8_t LOW_LIMIT_SWITCH_PIN, uint8_t HIGH_LIMIT_SWITCH_PIN)
-    : STEP_PIN(STEP_PIN),
-      DIR_PIN(DIR_PIN),
-      EN_PIN(EN_PIN),
-      LOW_LIMIT_SWITCH_PIN(LOW_LIMIT_SWITCH_PIN),
-      HIGH_LIMIT_SWITCH_PIN(HIGH_LIMIT_SWITCH_PIN)
+Stepper::Stepper(Pins pins)
+    : pins(pins), instance_id(instance_count)
 {
-    pinMode(STEP_PIN, OUTPUT);
-    pinMode(DIR_PIN, OUTPUT);
-    pinMode(EN_PIN, OUTPUT);
-    pinMode(LOW_LIMIT_SWITCH_PIN, INPUT);
-    pinMode(HIGH_LIMIT_SWITCH_PIN, INPUT);
+    // pin setup
+    pinMode(pins.STEP, OUTPUT);
+    pinMode(pins.DIR, OUTPUT);
+    pinMode(pins.EN, OUTPUT);
+    pinMode(pins.LOW_LIMIT_SWITCH, INPUT_PULLUP);
+    pinMode(pins.HIGH_LIMIT_SWITCH, INPUT_PULLUP);
 
     // set the instance id 0 for the first stepper, 1 for the second
-    instance_id = instance_count;
     instance_count++;
-}
-
-void Stepper::home()
-{
-    G::current_action[instance_id] = Actions::HOMING;
-    Draw::action();
-    // home the stepper
-    // digitalWrite(DIR_PIN, BACKWARD);
-
-    // goto 0_pos
-    // while (digitalRead(LOW_LIMIT_SWITCH_PIN) == LOW)
-    // {
-    //     digitalWrite(STEP_PIN, HIGH);
-    //     delayMicroseconds(1000);
-    //     digitalWrite(STEP_PIN, LOW);
-    //     delayMicroseconds(1000);
-    // }
-    delay(10000);
-
-    // set current_action to IDLE
-    G::current_action[instance_id] = Actions::IDLE;
-    Draw::action();
 }
 
 void Stepper::update()
 {
+
     // clamp set_pos to 0 and MAX_POS
-    if (set_pos > MAX_POS)
-        set_pos = MAX_POS;
-    else if (set_pos < 0)
-        set_pos = 0;
+    set_pos = constrain(set_pos, 0, MAX_POS);
 
     // use micros() to create a delay between steps
-    if (micros() - last_step_time > 500 && set_pos != current_pos)
+    if (micros() - last_step_time < 500)
+        return;
+
+    if (G::current_action[instance_id] == Actions::HOMING)
+    // home the stepper on startup
+    {
+        // TEMP: home the stepper sim
+        Draw::action();
+        delay(5000);
+        G::current_action[instance_id] = Actions::READY;
+
+        // if (digitalRead(pins.LOW_LIMIT_SWITCH) == LOW)
+        // {
+        //     digitalWrite(pins.STEP, HIGH);
+        //     delayMicroseconds(500);
+        //     return;
+        // }
+        // else
+        // {
+        //     // set current_action to IDLE
+        //     G::current_action[instance_id] = Actions::IDLE;
+        //     Draw::action();
+        // }
+    }
+    else if (set_pos != current_pos &&
+             (G::current_action[instance_id] == Actions::READY ||
+              G::current_action[instance_id] == Actions::MOVING))
+    // move the stepper on READ || MOVING
     {
         G::current_action[instance_id] = MOVING;
 
@@ -62,18 +61,18 @@ void Stepper::update()
 
         // if limit switch is pressed, don't step in that direction
         // TODO: set error flag
-        if (dir == FORWARD && digitalRead(HIGH_LIMIT_SWITCH_PIN) == HIGH)
+        if (dir == FORWARD && digitalRead(pins.HIGH_LIMIT_SWITCH) == HIGH)
             return;
-        if (dir == BACKWARD && digitalRead(LOW_LIMIT_SWITCH_PIN) == HIGH)
+        if (dir == BACKWARD && digitalRead(pins.LOW_LIMIT_SWITCH) == HIGH)
             return;
 
         // set direction
-        digitalWrite(DIR_PIN, dir);
+        digitalWrite(pins.DIR, dir);
 
         // step once
-        digitalWrite(STEP_PIN, HIGH);
+        digitalWrite(pins.STEP, HIGH);
         delayMicroseconds(500);
-        digitalWrite(STEP_PIN, LOW);
+        digitalWrite(pins.STEP, LOW);
         current_pos += dir == FORWARD ? 1 : -1;
 
         // redraw the volume indicator every 200th step (to reduce drawing time)
@@ -81,6 +80,6 @@ void Stepper::update()
 
         last_step_time = micros();
     }
-    else if (set_pos == current_pos)
-        G::current_action[instance_id] = IDLE;
+    else
+        G::current_action[instance_id] = READY;
 }

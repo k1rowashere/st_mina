@@ -62,7 +62,7 @@ void lock()
 {
     static uint32_t last_call = 0;
     // cooldown
-    if (millis() - last_call < 1000)
+    if (millis() - last_call < 500)
         return;
     G::pos_unlock = !G::pos_unlock;
     last_call = millis();

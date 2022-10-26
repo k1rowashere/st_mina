@@ -1,5 +1,7 @@
 #include "headers/draw.h"
 
+#include "Fonts/FreeSansBold9pt7b.h"
+
 MCUFRIEND_kbv tft;
 
 void Draw::init()
@@ -21,6 +23,7 @@ void Draw::init()
     tft.print("(2)");
 
     tft.setTextSize(2);
+    Draw::action();
     // draw volume indicator (static parts)
     auto volume_indicator_static = [](uint16_t x_offset = 0)
     {
@@ -35,13 +38,16 @@ void Draw::init()
     volume_indicator_static(SCREEN_WIDTH / 2);
 
     // draw buttons
+    tft.fillRect(SCREEN_WIDTH / 2 - 25, SCREEN_HEIGHT / 2 - 40, 50, 80, TFT_BLACK);
+    tft.drawRect(10, SCREEN_HEIGHT / 2 - 40, SCREEN_WIDTH - 20, 80, TFT_DARKGREY);
+    Draw::lock_button(G::pos_unlock ? TFT_WHITE : TFT_RED);
     Draw::plus_minus_buttons();
     Draw::plus_minus_buttons(SCREEN_WIDTH / 2);
 }
 
 void Draw::action()
 {
-    static Actions prev_action[2] = {IDLE, IDLE};
+    static Actions prev_action[2] = {READY, READY};
 
     auto draw = [](Actions action, uint16_t x_offset)
     {
@@ -51,24 +57,24 @@ void Draw::action()
         tft.fillRect(x_offset + 1, 24 * 2, SCREEN_WIDTH / 2 - 2, 24, TFT_BLACK);
         switch (action)
         {
-        case IDLE:
-            tft.print("Idle");
+        case READY:
+            tft.print("READY");
             break;
         case FILLING:
             tft.setTextColor(TFT_GREEN);
-            tft.print("Filling");
+            tft.print("FILLING");
             break;
         case HOMING:
             tft.setTextColor(TFT_YELLOW);
-            tft.print("Homing");
+            tft.print("HOMING");
             break;
         case MOVING:
             tft.setTextColor(TFT_YELLOW);
-            tft.print("Moving");
+            tft.print("MOVING");
             break;
         case STOPPED:
             tft.setTextColor(TFT_RED);
-            tft.print("Stopped");
+            tft.print("STOPPED");
             break;
         }
     };
@@ -111,11 +117,11 @@ void Draw::plus_minus_buttons(uint16_t x_offset, uint16_t color)
     int x = x_offset + SCREEN_WIDTH / 4, y = SCREEN_HEIGHT / 2 - 25;
 
     tft.setTextColor(color);
-    tft.drawRoundRect(x - 75, y, 50, 50, 10, color);
-    tft.drawRoundRect(x + 25, y, 50, 50, 10, color);
-    tft.setCursor(x - 50 - 6, y + 25 - 8);
+    tft.drawRoundRect(x - 70, y, 50, 50, 10, color);
+    tft.drawRoundRect(x + 20, y, 50, 50, 10, color);
+    tft.setCursor(x - 45 - 6, y + 25 - 8);
     tft.print("-");
-    tft.setCursor(x + 50 - 6, y + 25 - 8);
+    tft.setCursor(x + 45 - 6, y + 25 - 8);
     tft.print("+");
 }
 
@@ -128,9 +134,16 @@ void Draw::lock_button(uint16_t color)
 
     // bottom left of the screen
     tft.setTextColor(color);
-    tft.drawRoundRect(0, SCREEN_HEIGHT - 100, 50, 50, 10, color);
-    tft.setCursor(25 - 6, SCREEN_HEIGHT - 75 - 8);
-    tft.print("L");
+    tft.drawRoundRect(SCREEN_WIDTH / 2 - 25, SCREEN_HEIGHT / 2 - 25, 50, 50, 10, color);
+
+    // clear lock text
+    tft.fillRect(SCREEN_WIDTH / 2 - 25 + 13, SCREEN_HEIGHT / 2 - 25 + 10, 24, 30, TFT_BLACK);
+
+    // bitmap of a lock
+    if (color == TFT_WHITE)
+        tft.drawBitmap(SCREEN_WIDTH / 2 - 25 + 13, SCREEN_HEIGHT / 2 - 25 + 10, open_lock_bmp, 24, 30, color);
+    else
+        tft.drawBitmap(SCREEN_WIDTH / 2 - 25 + 13, SCREEN_HEIGHT / 2 - 25 + 10, lock_bmp, 24, 30, color);
 
     prev_color = color;
 }
