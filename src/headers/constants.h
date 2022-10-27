@@ -1,5 +1,7 @@
 #pragma once
 
+#define DEBUG
+
 #include <Arduino.h>
 
 constexpr uint16_t STEPS_PER_REV = 200;  // Number of steps per revolution
@@ -35,7 +37,10 @@ constexpr uint32_t MAX_POS = (uint32_t)STEPS_PER_REV * HEIGHT / THREAD_PITCH; //
 #define FILL_LIMIT_FULL_1 37
 #define FILL_LIMIT_EMPTY_1 39
 
-#define PEDAL_PIN 40
+#define FILL_PEDAL_PIN 40
+#define ON_OFF_PIN 41
+#define SELECTOR_PIN_0 43
+#define SELECTOR_PIN_1 45
 
 // filler
 #define FILL_TIME_MAX 5000 // max time to fill in ms

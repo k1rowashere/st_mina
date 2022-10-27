@@ -1,4 +1,5 @@
 #include "headers/helpers.h"
+#include "headers/global.h"
 
 // Convert Volume (ml) of product to number of steps from 0-pos
 uint32_t volume_to_steps(uint16_t volume)
@@ -24,4 +25,22 @@ uint16_t steps_to_volume(uint32_t steps)
 
     // convert volume to ml
     return volume / 1000;
+}
+
+void reset()
+{
+    G::current_action[0] = HOMING;
+    G::current_action[1] = HOMING;
+
+    G::filler_0.empty();
+    G::filler_1.empty();
+}
+
+void shutdown()
+{
+    G::current_action[0] = STOPPED;
+    G::current_action[1] = STOPPED;
+
+    G::filler_0.empty();
+    G::filler_1.empty();
 }

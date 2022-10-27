@@ -1,10 +1,8 @@
 #include "headers/draw.h"
 
-#include "Fonts/FreeSansBold9pt7b.h"
-
 MCUFRIEND_kbv tft;
 
-void Draw::init()
+void Draw::init(const Actions (&current_action)[2], bool pos_unlock)
 {
     uint16_t ID = tft.readID();
     tft.begin(ID);
@@ -23,7 +21,7 @@ void Draw::init()
     tft.print("(2)");
 
     tft.setTextSize(2);
-    Draw::action();
+    Draw::action(current_action);
     // draw volume indicator (static parts)
     auto volume_indicator_static = [](uint16_t x_offset = 0)
     {
@@ -40,12 +38,12 @@ void Draw::init()
     // draw buttons
     tft.fillRect(SCREEN_WIDTH / 2 - 25, SCREEN_HEIGHT / 2 - 40, 50, 80, TFT_BLACK);
     tft.drawRect(10, SCREEN_HEIGHT / 2 - 40, SCREEN_WIDTH - 20, 80, TFT_DARKGREY);
-    Draw::lock_button(G::pos_unlock ? TFT_WHITE : TFT_RED);
+    Draw::lock_button(pos_unlock ? TFT_WHITE : TFT_RED);
     Draw::plus_minus_buttons();
     Draw::plus_minus_buttons(SCREEN_WIDTH / 2);
 }
 
-void Draw::action()
+void Draw::action(const Actions (&actions)[2])
 {
     static Actions prev_action[2] = {READY, READY};
 
@@ -80,15 +78,13 @@ void Draw::action()
     };
 
     // draw action if changed
-    if (G::current_action[0] != prev_action[0])
+    for (uint8_t i = 0; i < 2; i++)
     {
-        draw(G::current_action[0], 0);
-        prev_action[0] = G::current_action[0];
-    }
-    if (G::current_action[1] != prev_action[1])
-    {
-        draw(G::current_action[1], SCREEN_WIDTH / 2);
-        prev_action[1] = G::current_action[1];
+        if (actions[i] != prev_action[i])
+        {
+            draw(actions[i], i * SCREEN_WIDTH / 2);
+            prev_action[i] = actions[i];
+        }
     }
 }
 
