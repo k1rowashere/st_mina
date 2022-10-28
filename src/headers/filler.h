@@ -21,10 +21,13 @@ public:
     void empty();
     void stop();
     void update();
+    void fill_cycle();
 
 private:
     void error();
-    void fill_cycle();
+
+    uint8_t prev_state = 0;
+
     const uint8_t instance_id;
     static uint8_t instance_count;
 };

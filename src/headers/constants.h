@@ -1,6 +1,7 @@
 #pragma once
 
 #define DEBUG
+// #define DISABLE_SWITCHES
 
 #include <Arduino.h>
 
@@ -66,6 +67,7 @@ enum Actions
     HOMING,
     MOVING,
     FILLING,
+    EMPTYING,
     STOPPED
 };
 

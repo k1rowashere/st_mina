@@ -7,7 +7,7 @@ void setup()
     pinMode(SELECTOR_PIN_0, INPUT_PULLUP);
     pinMode(SELECTOR_PIN_1, INPUT_PULLUP);
 
-#ifndef DEBUG
+#ifndef DISABLE_SWITCHES
     // init steppers if ON/OFF switch is on
     if (digitalRead(ON_OFF_PIN) == HIGH)
     {
@@ -18,12 +18,15 @@ void setup()
     {
         G::current_action[0] = STOPPED;
         G::current_action[1] = STOPPED;
+
+        G::filler_0.empty();
+        G::filler_1.empty();
     }
 #else
-    Serial.begin(9600);
-    G::current_action[0] = READY;
-    G::current_action[1] = READY;
+    G::current_action[0] = HOMING;
+    G::current_action[1] = HOMING;
 #endif
+    Serial.begin(9600);
 
     // lcd setup
     Draw::init(G::current_action, G::pos_unlock);
@@ -35,26 +38,34 @@ void setup()
 
 void loop()
 {
-#ifndef DEBUG
-    // check on/off switch status
-    if (digitalRead(ON_OFF_PIN) == LOW)
+
+#ifndef DISABLE_SWITCHES
+    // detect rising edge on ON/OFF switch and selector switches
+    // if ON/OFF & selector switch are on, init steppers
+    // if ON/OFF switch is off, stop steppers and empty fillers
+    uint8_t curr_on_off = 0;
+    bitWrite(curr_on_off, 0, digitalRead(ON_OFF_PIN) && digitalRead(SELECTOR_PIN_0));
+    bitWrite(curr_on_off, 1, digitalRead(ON_OFF_PIN) && digitalRead(SELECTOR_PIN_1));
+
+    static uint8_t prev_on_off = curr_on_off;
+
+    if (bitRead(~prev_on_off & curr_on_off, 0))
+        G::current_action[0] = HOMING;
+    else if (!curr_on_off)
     {
+        G::filler_0.empty();
         G::current_action[0] = STOPPED;
+    }
+
+    if (bitRead(~prev_on_off & curr_on_off, 1))
+        G::current_action[1] = HOMING;
+    else if (!curr_on_off)
+    {
+        G::filler_1.empty();
         G::current_action[1] = STOPPED;
     }
-    else
-    {
-        // check 3 way selector status
-        if (digitalRead(SELECTOR_PIN_0) == LOW)
-            G::current_action[0] = STOPPED;
-        else if (G::current_action[0] == STOPPED)
-            G::current_action[0] = READY;
 
-        if (digitalRead(SELECTOR_PIN_1) == LOW)
-            G::current_action[1] = STOPPED;
-        else if (G::current_action[1] == STOPPED)
-            G::current_action[1] = READY;
-    }
+    prev_on_off = curr_on_off;
 #endif
 
     // update steppers (move to set_pos || home on startup)

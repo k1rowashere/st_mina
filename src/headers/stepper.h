@@ -29,4 +29,5 @@ private:
 
     const uint8_t instance_id;
     static uint8_t instance_count;
+    bool first_after_homing = false;
 };

@@ -18,7 +18,6 @@ Stepper::Stepper(Pins pins)
 
 void Stepper::update()
 {
-
     // TODO: error handling
 
     // use micros() to create a delay between steps
@@ -41,14 +40,23 @@ void Stepper::update()
         }
 
         G::current_action[instance_id] = Actions::READY;
+        first_after_homing = true;
     }
-    else if (G::current_action[instance_id] == Actions::READY ||
-             G::current_action[instance_id] == Actions::MOVING)
+    if (G::current_action[instance_id] == Actions::READY ||
+        G::current_action[instance_id] == Actions::MOVING)
     {
         // if-guard: READY if set_pos achieved
         if (set_pos == current_pos)
         {
             G::current_action[instance_id] = Actions::READY;
+            if (first_after_homing)
+            {
+                first_after_homing = false;
+                if (instance_id == 0)
+                    G::filler_0.fill_cycle();
+                else if (instance_id == 1)
+                    G::filler_1.fill_cycle();
+            }
             return;
         }
 

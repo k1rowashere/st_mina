@@ -16,12 +16,14 @@ Filler::Filler(Pins pins)
 
 void Filler::empty()
 {
+    G::current_action[instance_id] = Actions::EMPTYING;
     digitalWrite(pins.LOAD_SOLENOID, LOW);
     digitalWrite(pins.UNLOAD_SOLENOID, HIGH);
 }
 
 void Filler::fill()
 {
+    G::current_action[instance_id] = Actions::FILLING;
     digitalWrite(pins.LOAD_SOLENOID, HIGH);
     digitalWrite(pins.UNLOAD_SOLENOID, LOW);
 }
@@ -60,7 +62,7 @@ void Filler::stop()
  */
 void inline Filler::fill_cycle()
 {
-    if (G::current_action[instance_id] != FILLING && G::current_action[instance_id] != READY)
+    if (!(G::current_action[instance_id] == FILLING || G::current_action[instance_id] == READY || G::current_action[instance_id] == EMPTYING))
         return;
 
     bool fl_empty = digitalRead(pins.FILL_LIMIT_EMPTY);
@@ -69,18 +71,16 @@ void inline Filler::fill_cycle()
     if (fl_empty)
     {
         // refill if at empty position
-        G::current_action[instance_id] = FILLING;
         fill();
     }
     else
     {
-        if (G::current_action[instance_id] == READY)
+        if (G::current_action[instance_id] == READY && digitalRead(pins.PEDAL))
         {
             // empty at start of cycle (pedal pressed)
-            G::current_action[instance_id] = FILLING;
-            fill();
+            empty();
         }
-        else if (fl_full)
+        else if (fl_full && G::current_action[instance_id] == FILLING)
         {
             // stop at end of cycle (full limit reached)
             G::current_action[instance_id] = READY;
@@ -111,11 +111,12 @@ void Filler::error()
 
 void Filler::update()
 {
+#ifndef DEBUG
     // error handling
     error();
+#endif
 
     // Rising edge detection
-    static uint8_t prev_state = 0;
     uint8_t curr_state = 0;
 
     curr_state |= digitalRead(pins.PEDAL) << 1;

@@ -15,10 +15,10 @@ void Draw::init(const Actions (&current_action)[2], bool pos_unlock)
     // draw title
     tft.setTextSize(3);
     tft.setTextColor(TFT_WHITE);
-    tft.setCursor(SCREEN_WIDTH / 4 - 19, 0);
-    tft.print("(1)");
-    tft.setCursor(SCREEN_WIDTH / 4 * 3 - 19, 0);
-    tft.print("(2)");
+    tft.setCursor(SCREEN_WIDTH / 4 - 45, 0);
+    tft.print("(LHS)");
+    tft.setCursor(SCREEN_WIDTH / 4 * 3 - 45, 0);
+    tft.print("(RHS)");
 
     tft.setTextSize(2);
     Draw::action(current_action);
@@ -62,6 +62,10 @@ void Draw::action(const Actions (&actions)[2])
             tft.setTextColor(TFT_GREEN);
             tft.print("FILLING");
             break;
+        case EMPTYING:
+            tft.setTextColor(TFT_GREEN);
+            tft.print("EMPTYING");
+            break;
         case HOMING:
             tft.setTextColor(TFT_YELLOW);
             tft.print("HOMING");
@@ -90,16 +94,42 @@ void Draw::action(const Actions (&actions)[2])
 
 void Draw::volume_indicator(uint32_t curr_vol_pos, uint32_t set_vol_pos, uint16_t x_offset)
 {
-    tft.setTextColor(TFT_LIGHTGREY);
-    // draw current volume indicator
-    tft.setCursor(x_offset + SCREEN_WIDTH / 2 - 50, 24 * 3);
-    tft.fillRect(x_offset + SCREEN_WIDTH / 2 - 50, 24 * 3, 50, 18, TFT_BLACK);
-    tft.print(steps_to_volume(curr_vol_pos));
 
-    // draw set volume indicator
-    tft.setCursor(x_offset + SCREEN_WIDTH / 2 - 50, 24 * 4);
-    tft.fillRect(x_offset + SCREEN_WIDTH / 2 - 50, 24 * 4, 50, 18, TFT_BLACK);
-    tft.print(steps_to_volume(set_vol_pos));
+    // TODO: remove repitition
+
+    // draw current volume indicator, only draw if changed
+    static uint32_t prev_curr_vol_pos[2] = {UINT32_MAX, UINT32_MAX};
+    if (curr_vol_pos != prev_curr_vol_pos[x_offset / (SCREEN_WIDTH / 2)])
+    {
+
+        // clear previous text (faster than tft.fillRect)
+        tft.setTextColor(TFT_BLACK);
+        tft.setCursor(x_offset + SCREEN_WIDTH / 2 - 50, 24 * 3);
+        tft.print(steps_to_volume(prev_curr_vol_pos[x_offset / (SCREEN_WIDTH / 2)]));
+
+        tft.setTextColor(TFT_LIGHTGREY);
+        tft.setCursor(x_offset + SCREEN_WIDTH / 2 - 50, 24 * 3);
+        tft.print(steps_to_volume(curr_vol_pos));
+
+        prev_curr_vol_pos[x_offset / (SCREEN_WIDTH / 2)] = curr_vol_pos;
+    }
+
+    // draw set volume indicator, only draw if changed
+    static uint32_t prev_set_vol_pos[2] = {UINT32_MAX, UINT32_MAX};
+    if (set_vol_pos != prev_set_vol_pos[x_offset / (SCREEN_WIDTH / 2)])
+    {
+
+        // clear previous text (faster than tft.fillRect)
+        tft.setTextColor(TFT_BLACK);
+        tft.setCursor(x_offset + SCREEN_WIDTH / 2 - 50, 24 * 4);
+        tft.print(steps_to_volume(prev_set_vol_pos[x_offset / (SCREEN_WIDTH / 2)]));
+
+        tft.setTextColor(TFT_LIGHTGREY);
+        tft.setCursor(x_offset + SCREEN_WIDTH / 2 - 50, 24 * 4);
+        tft.print(steps_to_volume(set_vol_pos));
+
+        prev_set_vol_pos[x_offset / (SCREEN_WIDTH / 2)] = set_vol_pos;
+    }
 }
 
 void Draw::plus_minus_buttons(uint16_t x_offset, uint16_t color)
