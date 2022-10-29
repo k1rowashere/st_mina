@@ -6,7 +6,7 @@ void Draw::init(const Actions (&current_action)[2], bool pos_unlock)
 {
     uint16_t ID = tft.readID();
     tft.begin(ID);
-    tft.setRotation(-45);
+    tft.setRotation(3);
     tft.fillScreen(TFT_BLACK);
     tft.drawFastVLine(SCREEN_WIDTH / 2, 0, SCREEN_HEIGHT, TFT_WHITE);
 
@@ -92,43 +92,35 @@ void Draw::action(const Actions (&actions)[2])
     }
 }
 
-void Draw::volume_indicator(uint32_t curr_vol_pos, uint32_t set_vol_pos, uint16_t x_offset)
+void Draw::volume_indicator(uint32_t act_pos, uint32_t set_pos, uint16_t x_offset)
 {
 
-    // TODO: remove repitition
-
-    // draw current volume indicator, only draw if changed
-    static uint32_t prev_curr_vol_pos[2] = {UINT32_MAX, UINT32_MAX};
-    if (curr_vol_pos != prev_curr_vol_pos[x_offset / (SCREEN_WIDTH / 2)])
+    auto draw = [x_offset](uint32_t pos, uint8_t y_offset = 0)
     {
+        tft.setCursor(x_offset + SCREEN_WIDTH / 2 - 50, 24 * (3 + y_offset));
+        // clear previous text (the width of the text is 12 * 4 = 48)
+        tft.fillRect(tft.getCursorX(), tft.getCursorY(), 48, 24, TFT_BLACK);
 
-        // clear previous text (faster than tft.fillRect)
-        tft.setTextColor(TFT_BLACK);
-        tft.setCursor(x_offset + SCREEN_WIDTH / 2 - 50, 24 * 3);
-        tft.print(steps_to_volume(prev_curr_vol_pos[x_offset / (SCREEN_WIDTH / 2)]));
-
+        // draw new text
         tft.setTextColor(TFT_LIGHTGREY);
-        tft.setCursor(x_offset + SCREEN_WIDTH / 2 - 50, 24 * 3);
-        tft.print(steps_to_volume(curr_vol_pos));
+        tft.print(steps_to_volume(pos));
+    };
 
-        prev_curr_vol_pos[x_offset / (SCREEN_WIDTH / 2)] = curr_vol_pos;
+    uint8_t index = x_offset ? 1 : 0;
+    static uint32_t prev_act_pos[2] = {UINT32_MAX, UINT32_MAX};
+    static uint32_t prev_set_pos[2] = {UINT32_MAX, UINT32_MAX};
+    // draw current volume indicator, only draw if changed
+    if (act_pos != prev_act_pos[index])
+    {
+        draw(act_pos);
+        prev_act_pos[index] = act_pos;
     }
 
     // draw set volume indicator, only draw if changed
-    static uint32_t prev_set_vol_pos[2] = {UINT32_MAX, UINT32_MAX};
-    if (set_vol_pos != prev_set_vol_pos[x_offset / (SCREEN_WIDTH / 2)])
+    if (set_pos != prev_set_pos[index])
     {
-
-        // clear previous text (faster than tft.fillRect)
-        tft.setTextColor(TFT_BLACK);
-        tft.setCursor(x_offset + SCREEN_WIDTH / 2 - 50, 24 * 4);
-        tft.print(steps_to_volume(prev_set_vol_pos[x_offset / (SCREEN_WIDTH / 2)]));
-
-        tft.setTextColor(TFT_LIGHTGREY);
-        tft.setCursor(x_offset + SCREEN_WIDTH / 2 - 50, 24 * 4);
-        tft.print(steps_to_volume(set_vol_pos));
-
-        prev_set_vol_pos[x_offset / (SCREEN_WIDTH / 2)] = set_vol_pos;
+        draw(set_pos, 1);
+        prev_set_pos[index] = set_pos;
     }
 }
 
@@ -183,7 +175,7 @@ void Draw::apply_cancel_buttons()
     tft.drawRoundRect(3 * x - 50, y, 100, 50, 10, TFT_WHITE);
     tft.setCursor(x - 30, y + 25 - 8);
     tft.print("Apply");
-    tft.setCursor(3 * x - 30, y + 25 - 8);
+    tft.setCursor(3 * x - 36, y + 25 - 8);
     tft.print("Cancel");
 }
 

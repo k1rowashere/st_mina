@@ -102,8 +102,8 @@ void loop()
     if (G::redraw_set_vol)
     {
         G::redraw_set_vol = false;
-        Draw::volume_indicator(G::stepper_0.current_pos, G::vis_set_pos[0]);
-        Draw::volume_indicator(G::stepper_1.current_pos, G::vis_set_pos[1], SCREEN_WIDTH / 2);
+        Draw::volume_indicator(G::stepper_0.actual_pos, G::vis_set_pos[0]);
+        Draw::volume_indicator(G::stepper_1.actual_pos, G::vis_set_pos[1], SCREEN_WIDTH / 2);
     }
 
     // touch screen handling ---------------------------------------------

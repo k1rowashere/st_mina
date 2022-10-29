@@ -20,12 +20,12 @@ void Stepper::update()
 {
     // TODO: error handling
 
-    // use micros() to create a delay between steps
+    // use micros() to create async delay between steps
     if (micros() - last_step_time < 500)
         return;
 
     // clamp set_pos to 0 and MAX_POS
-    set_pos = constrain(set_pos, 0, MAX_POS);
+    set_pos = constrain((int32_t)set_pos, 0, MAX_POS);
 
     // home the stepper on startup
     if (G::current_action[instance_id] == Actions::HOMING)
@@ -46,7 +46,7 @@ void Stepper::update()
         G::current_action[instance_id] == Actions::MOVING)
     {
         // if-guard: READY if set_pos achieved
-        if (set_pos == current_pos)
+        if (set_pos == actual_pos)
         {
             G::current_action[instance_id] = Actions::READY;
             if (first_after_homing)
@@ -62,7 +62,7 @@ void Stepper::update()
 
         G::current_action[instance_id] = MOVING;
 
-        bool dir = set_pos > current_pos ? FORWARD : BACKWARD;
+        bool dir = set_pos > actual_pos ? FORWARD : BACKWARD;
 
         // set direction
         digitalWrite(pins.DIR, dir);
@@ -71,10 +71,10 @@ void Stepper::update()
         digitalWrite(pins.STEP, HIGH);
         delayMicroseconds(500);
         digitalWrite(pins.STEP, LOW);
-        current_pos += dir == FORWARD ? 1 : -1;
+        actual_pos += dir == FORWARD ? 1 : -1;
 
         // redraw the volume indicator every 200th step (to reduce drawing time)
-        G::redraw_set_vol = !(current_pos % 200) || current_pos == set_pos;
+        G::redraw_set_vol = !(actual_pos % 500) || actual_pos == set_pos;
 
         last_step_time = micros();
     }
