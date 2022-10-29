@@ -14,7 +14,7 @@ namespace G
     extern Filler filler_0;
     extern Filler filler_1;
 
-    extern uint32_t vis_set_pos[2];   // Current position in steps
+    extern uint16_t vis_set_pos[2];   // Current position in steps
     extern Actions current_action[2]; // Current action
 
     extern bool redraw_set_vol; // Flag for redrawing the volume

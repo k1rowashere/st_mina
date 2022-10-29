@@ -92,10 +92,10 @@ void Draw::action(const Actions (&actions)[2])
     }
 }
 
-void Draw::volume_indicator(uint32_t act_pos, uint32_t set_pos, uint16_t x_offset)
+void Draw::volume_indicator(uint16_t act_pos, uint16_t set_pos, uint16_t x_offset)
 {
 
-    auto draw = [x_offset](uint32_t pos, uint8_t y_offset = 0)
+    auto draw = [x_offset](uint16_t pos, uint8_t y_offset = 0)
     {
         tft.setCursor(x_offset + SCREEN_WIDTH / 2 - 50, 24 * (3 + y_offset));
         // clear previous text (the width of the text is 12 * 4 = 48)
@@ -107,8 +107,8 @@ void Draw::volume_indicator(uint32_t act_pos, uint32_t set_pos, uint16_t x_offse
     };
 
     uint8_t index = x_offset ? 1 : 0;
-    static uint32_t prev_act_pos[2] = {UINT32_MAX, UINT32_MAX};
-    static uint32_t prev_set_pos[2] = {UINT32_MAX, UINT32_MAX};
+    static uint16_t prev_act_pos[2] = {UINT16_MAX, UINT16_MAX};
+    static uint16_t prev_set_pos[2] = {UINT16_MAX, UINT16_MAX};
     // draw current volume indicator, only draw if changed
     if (act_pos != prev_act_pos[index])
     {

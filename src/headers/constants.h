@@ -10,7 +10,7 @@ constexpr uint16_t CYLINDER_RADIUS = 36; // Radius of the cylinder in mm
 constexpr float THREAD_PITCH = 1.5;      // Thread pitch in mm
 constexpr uint16_t HEIGHT = 300;         // Height of the cylinder in mm
 
-constexpr uint32_t MAX_POS = (uint32_t)STEPS_PER_REV * HEIGHT / THREAD_PITCH; // Max number of steps to limit switch from 0_pos
+constexpr int32_t MAX_POS = (int32_t)STEPS_PER_REV * HEIGHT / THREAD_PITCH; // Max number of steps to limit switch from 0_pos
 
 #define SCREEN_WIDTH 480  // tft width
 #define SCREEN_HEIGHT 320 // tft height

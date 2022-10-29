@@ -33,7 +33,7 @@ void setup()
 
     // read from eeprom
     G::vis_set_pos[0] = EEPROM.get(0, G::stepper_0.set_pos);
-    G::vis_set_pos[1] = EEPROM.get(4, G::stepper_1.set_pos);
+    G::vis_set_pos[1] = EEPROM.get(2, G::stepper_1.set_pos);
 }
 
 void loop()
@@ -81,9 +81,10 @@ void loop()
     Draw::plus_minus_buttons(0, G::pos_unlock ? TFT_WHITE : TFT_DARKGREY);
     Draw::plus_minus_buttons(SCREEN_WIDTH / 2, G::pos_unlock ? TFT_WHITE : TFT_DARKGREY);
     Draw::lock_button(G::pos_unlock ? TFT_WHITE : TFT_RED);
-    long temp;
+
+    uint16_t temp;
     // if set_pos is not equal to the value in EEPROM, show save and cancel buttons
-    if (G::vis_set_pos[0] != EEPROM.get(0, temp) || G::vis_set_pos[1] != EEPROM.get(4, temp))
+    if (G::vis_set_pos[0] != EEPROM.get(0, temp) || G::vis_set_pos[1] != EEPROM.get(2, temp))
     {
         // if the buttons are not already drawn, draw them
         if (!G::not_saved)

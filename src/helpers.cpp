@@ -2,7 +2,7 @@
 #include "headers/global.h"
 
 // Convert Volume (ml) of product to number of steps from 0-pos
-uint32_t volume_to_steps(uint16_t volume)
+uint16_t volume_to_steps(uint16_t volume)
 {
     // convert volume to mm^3
     volume *= 1000;
@@ -15,7 +15,7 @@ uint32_t volume_to_steps(uint16_t volume)
 }
 
 // Convert number of steps from 0-pos to Volume (ml) of product
-uint16_t steps_to_volume(uint32_t steps)
+uint16_t steps_to_volume(uint16_t steps)
 {
     // calculate height of cylinder given the number of steps
     float height = steps * THREAD_PITCH / STEPS_PER_REV;
@@ -25,22 +25,4 @@ uint16_t steps_to_volume(uint32_t steps)
 
     // convert volume to ml
     return volume / 1000;
-}
-
-void reset()
-{
-    G::current_action[0] = HOMING;
-    G::current_action[1] = HOMING;
-
-    G::filler_0.empty();
-    G::filler_1.empty();
-}
-
-void shutdown()
-{
-    G::current_action[0] = STOPPED;
-    G::current_action[1] = STOPPED;
-
-    G::filler_0.empty();
-    G::filler_1.empty();
 }

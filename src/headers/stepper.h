@@ -7,8 +7,8 @@
 class Stepper
 {
 public:
-    uint32_t set_pos = 0;
-    uint32_t actual_pos = 0;
+    uint16_t set_pos = 0;
+    uint16_t actual_pos = 0;
 
     struct Pins
     {

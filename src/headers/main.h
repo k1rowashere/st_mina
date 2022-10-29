@@ -23,12 +23,12 @@ Stepper G::stepper_1({STEP_PIN_1, DIR_PIN_1, EN_PIN_1, LOW_LIMIT_SWITCH_PIN_1, H
 Filler G::filler_0({LOAD_SOLENOID_0, UNLOAD_SOLENOID_0, FILL_LIMIT_FULL_0, FILL_LIMIT_EMPTY_0, FILL_PEDAL_PIN});
 Filler G::filler_1({LOAD_SOLENOID_1, UNLOAD_SOLENOID_1, FILL_LIMIT_FULL_1, FILL_LIMIT_EMPTY_1, FILL_PEDAL_PIN});
 
-uint32_t G::vis_set_pos[2];
+uint16_t G::vis_set_pos[2];
 Actions G::current_action[2]; // Current action
 
 bool G::redraw_set_vol = true; // Flag for redrawing the volume
 bool G::not_saved = false;     // Flag for saving the volume to EEPROM
-bool G::pos_unlock = false;    // Flag for locking the position
+bool G::pos_unlock = true;     // Flag for locking the position
 
 // init touchscreen event handlers
 bool always_true = true;
