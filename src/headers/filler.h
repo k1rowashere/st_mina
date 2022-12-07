@@ -17,11 +17,11 @@ public:
     const Pins pins;
 
     Filler(Pins pins);
-    void fill();
-    void empty();
+    Status fill();
+    Status empty();
     void stop();
-    void update();
-    void fill_cycle();
+    Status update(Status status);
+    Status fill_cycle(Status status);
 
 private:
     void error();

@@ -2,7 +2,7 @@
 
 MCUFRIEND_kbv tft;
 
-void Draw::init(const Actions (&current_action)[2], bool pos_unlock)
+void Draw::init(const Status (&current_status)[2], bool pos_unlock)
 {
     uint16_t ID = tft.readID();
     tft.begin(ID);
@@ -21,7 +21,7 @@ void Draw::init(const Actions (&current_action)[2], bool pos_unlock)
     tft.print("(RHS)");
 
     tft.setTextSize(2);
-    Draw::action(current_action);
+    Draw::status(current_status);
     // draw volume indicator (static parts)
     auto volume_indicator_static = [](uint16_t x_offset = 0)
     {
@@ -43,17 +43,17 @@ void Draw::init(const Actions (&current_action)[2], bool pos_unlock)
     Draw::plus_minus_buttons(SCREEN_WIDTH / 2);
 }
 
-void Draw::action(const Actions (&actions)[2])
+void Draw::status(const Status (&status)[2])
 {
-    static Actions prev_action[2] = {READY, READY};
+    static Status prev_status[2] = {READY, READY};
 
-    auto draw = [](Actions action, uint16_t x_offset)
+    auto draw = [](Status status, uint16_t x_offset)
     {
         tft.setTextColor(TFT_WHITE);
         tft.setCursor(x_offset + 18, 24 * 2);
-        // clear action area
+        // clear status area
         tft.fillRect(x_offset + 1, 24 * 2, SCREEN_WIDTH / 2 - 2, 24, TFT_BLACK);
-        switch (action)
+        switch (status)
         {
         case READY:
             tft.print("READY");
@@ -81,21 +81,29 @@ void Draw::action(const Actions (&actions)[2])
         }
     };
 
-    // draw action if changed
+    // draw status if changed
     for (uint8_t i = 0; i < 2; i++)
     {
-        if (actions[i] != prev_action[i])
+        if (status[i] != prev_status[i])
         {
-            draw(actions[i], i * SCREEN_WIDTH / 2);
-            prev_action[i] = actions[i];
+            draw(status[i], i * SCREEN_WIDTH / 2);
+            prev_status[i] = status[i];
         }
     }
 }
 
-void Draw::volume_indicator(uint16_t act_pos, uint16_t set_pos, uint16_t x_offset)
+void Draw::volume_indicator(const uint16_t act_set_pos[2], const uint16_t vis_set_pos[2])
 {
+    static uint16_t prev_act_pos[2] = {UINT16_MAX, UINT16_MAX};
+    static uint16_t prev_set_pos[2] = {UINT16_MAX, UINT16_MAX};
+    static uint32_t prev_time = 0;
 
-    auto draw = [x_offset](uint16_t pos, uint8_t y_offset = 0)
+    // rate limit
+    if (millis() - prev_time < 100)
+        return;
+    prev_time = millis();
+
+    auto draw = [](uint16_t pos, uint8_t y_offset = 0, uint16_t x_offset = 0)
     {
         tft.setCursor(x_offset + SCREEN_WIDTH / 2 - 50, 24 * (3 + y_offset));
         // clear previous text (the width of the text is 12 * 4 = 48)
@@ -106,21 +114,24 @@ void Draw::volume_indicator(uint16_t act_pos, uint16_t set_pos, uint16_t x_offse
         tft.print(steps_to_volume(pos));
     };
 
-    uint8_t index = x_offset ? 1 : 0;
-    static uint16_t prev_act_pos[2] = {UINT16_MAX, UINT16_MAX};
-    static uint16_t prev_set_pos[2] = {UINT16_MAX, UINT16_MAX};
-    // draw current volume indicator, only draw if changed
-    if (act_pos != prev_act_pos[index])
+    // draw act_pos volume indicator, only draw if changed
+    for (uint8_t i = 0; i < 2; i++)
     {
-        draw(act_pos);
-        prev_act_pos[index] = act_pos;
+        if (act_set_pos[i] != prev_act_pos[i])
+        {
+            draw(act_set_pos[i], 0, i * SCREEN_WIDTH / 2);
+            prev_act_pos[i] = act_set_pos[i];
+        }
     }
 
-    // draw set volume indicator, only draw if changed
-    if (set_pos != prev_set_pos[index])
+    // draw set_pos volume indicator, only draw if changed
+    for (uint8_t i = 0; i < 2; i++)
     {
-        draw(set_pos, 1);
-        prev_set_pos[index] = set_pos;
+        if (vis_set_pos[i] != prev_set_pos[i])
+        {
+            draw(vis_set_pos[i], 1, i * SCREEN_WIDTH / 2);
+            prev_set_pos[i] = vis_set_pos[i];
+        }
     }
 }
 
@@ -197,4 +208,11 @@ void Draw::clear_buttons()
 {
     tft.fillRect(0, SCREEN_HEIGHT - 50, SCREEN_WIDTH / 2 - 1, 50, TFT_BLACK);
     tft.fillRect(SCREEN_WIDTH / 2 + 1, SCREEN_HEIGHT - 50, SCREEN_WIDTH / 2, 50, TFT_BLACK);
+}
+
+void Draw::print_error(const char *error)
+{
+    tft.setTextColor(TFT_RED);
+    tft.setCursor(10, SCREEN_HEIGHT - 50 - 24);
+    tft.print(error);
 }

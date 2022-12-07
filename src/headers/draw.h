@@ -2,18 +2,19 @@
 #include <Adafruit_GFX.h>  // Core graphics library
 #include <MCUFRIEND_kbv.h> // Hardware-specific library
 #include "constants.h"
-#include "helpers.h"
+#include "utils.h"
 
 namespace Draw
 {
-    void init(const Actions (&current_action)[2], bool pos_unlock);
-    void action(const Actions (&actions)[2]);
-    void volume_indicator(uint16_t act_pos, uint16_t set_pos, uint16_t x_offset = 0);
+    void init(const Status (&current_status)[2], bool pos_unlock);
+    void status(const Status (&status)[2]);
+    void volume_indicator(const uint16_t act_set_pos[2], const uint16_t vis_set_pos[2]);
     void plus_minus_buttons(uint16_t start_pos = 0, uint16_t color = TFT_WHITE);
     void lock_button(uint16_t color = TFT_WHITE);
     void apply_cancel_buttons();
     void apply_success();
     void clear_buttons();
+    void print_error(const char *error);
 }
 
 const uint8_t lock_bmp[] PROGMEM = {

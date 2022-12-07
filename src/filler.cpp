@@ -14,18 +14,18 @@ Filler::Filler(Pins pins)
     pinMode(pins.FILL_LIMIT_EMPTY, INPUT_PULLUP);
 }
 
-void Filler::empty()
+Status Filler::empty()
 {
-    G::current_action[instance_id] = Actions::EMPTYING;
     digitalWrite(pins.LOAD_SOLENOID, LOW);
     digitalWrite(pins.UNLOAD_SOLENOID, HIGH);
+    return Status::EMPTYING;
 }
 
-void Filler::fill()
+Status Filler::fill()
 {
-    G::current_action[instance_id] = Actions::FILLING;
     digitalWrite(pins.LOAD_SOLENOID, HIGH);
     digitalWrite(pins.UNLOAD_SOLENOID, LOW);
+    return Status::FILLING;
 }
 
 void Filler::stop()
@@ -49,7 +49,7 @@ void Filler::stop()
  *
  * 5. If the piston is stuck mid cycle (FILLING state for too long): the state will be set to READY, after a timeout.
  *
- * FILL_LIMIT_EMPTY    |    FILL_LIMIT_FULL    |    FILLING/READY    |    action
+ * FILL_LIMIT_EMPTY    |    FILL_LIMIT_FULL    |    FILLING/READY    |    status
  * --------------------|-----------------------|---------------------|-----------------------------
  * 1                   |    1                  |    READY            |    ERROR
  * 1                   |    1                  |    FILLING          |    ERROR
@@ -60,10 +60,10 @@ void Filler::stop()
  * 0                   |    0                  |    READY            |    EMPTY + set state to FILLING
  * 0                   |    0                  |    FILLING          |    Do nothing
  */
-void inline Filler::fill_cycle()
+Status Filler::fill_cycle(Status status)
 {
-    if (!(G::current_action[instance_id] == FILLING || G::current_action[instance_id] == READY || G::current_action[instance_id] == EMPTYING))
-        return;
+    if (!(status == FILLING || status == READY || status == EMPTYING))
+        return status;
 
     bool fl_empty = digitalRead(pins.FILL_LIMIT_EMPTY);
     bool fl_full = digitalRead(pins.FILL_LIMIT_FULL);
@@ -71,45 +71,45 @@ void inline Filler::fill_cycle()
     if (fl_empty)
     {
         // refill if at empty position
-        fill();
+        return fill();
     }
     else
     {
-        if (G::current_action[instance_id] == READY && digitalRead(pins.PEDAL))
+        if (status == READY && digitalRead(pins.PEDAL))
         {
             // empty at start of cycle (pedal pressed)
-            empty();
+            return empty();
         }
-        else if (fl_full && G::current_action[instance_id] == FILLING)
+        else if (fl_full && status == FILLING)
         {
             // stop at end of cycle (full limit reached)
-            G::current_action[instance_id] = READY;
             stop();
+            return Status::READY;
         }
     }
 }
 
-void Filler::error()
-{
-    // If state is FILLING for more than FILL_TIMING_MAX, then set to READY
-    static uint32_t fill_start_time = 0;
-    if (G::current_action[instance_id] == FILLING)
-    {
-        if (fill_start_time == 0)
-            fill_start_time = millis();
-        else if (millis() - fill_start_time > FILL_TIME_MAX)
-        {
-            G::current_action[instance_id] = READY;
-            digitalWrite(pins.LOAD_SOLENOID, 0);
-            digitalWrite(pins.UNLOAD_SOLENOID, 0);
-            fill_start_time = 0;
-        }
-    }
-    else
-        fill_start_time = 0;
-}
+// void Filler::error()
+// {
+//     // If state is FILLING for more than FILL_TIMING_MAX, then set to READY
+//     static uint32_t fill_start_time = 0;
+//     if (status == FILLING)
+//     {
+//         if (fill_start_time == 0)
+//             fill_start_time = millis();
+//         else if (millis() - fill_start_time > FILL_TIME_MAX)
+//         {
+//             status = READY;
+//             digitalWrite(pins.LOAD_SOLENOID, 0);
+//             digitalWrite(pins.UNLOAD_SOLENOID, 0);
+//             fill_start_time = 0;
+//         }
+//     }
+//     else
+//         fill_start_time = 0;
+// }
 
-void Filler::update()
+Status Filler::update(Status status)
 {
 #ifndef DEBUG
     // error handling
@@ -124,7 +124,8 @@ void Filler::update()
     curr_state |= digitalRead(pins.FILL_LIMIT_EMPTY) << 3;
 
     if (~prev_state & curr_state)
-        fill_cycle();
+        status = fill_cycle(status);
 
     prev_state = curr_state;
+    return status;
 }

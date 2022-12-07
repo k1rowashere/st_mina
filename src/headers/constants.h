@@ -1,9 +1,8 @@
 #pragma once
+#include <Arduino.h>
 
 #define DEBUG
 // #define DISABLE_SWITCHES
-
-#include <Arduino.h>
 
 constexpr uint16_t STEPS_PER_REV = 200;  // Number of steps per revolution
 constexpr uint16_t CYLINDER_RADIUS = 36; // Radius of the cylinder in mm
@@ -14,6 +13,10 @@ constexpr int32_t MAX_POS = (int32_t)STEPS_PER_REV * HEIGHT / THREAD_PITCH; // M
 
 #define SCREEN_WIDTH 480  // tft width
 #define SCREEN_HEIGHT 320 // tft height
+
+#define FILL_TIME_MAX 5000 // max time to fill in ms
+
+#define MAX_DISTANCE 1000 // minium level (max distance) ultrasonic can detect
 
 // pins
 #define STEP_PIN_0 22
@@ -40,35 +43,20 @@ constexpr int32_t MAX_POS = (int32_t)STEPS_PER_REV * HEIGHT / THREAD_PITCH; // M
 
 #define FILL_PEDAL_PIN 40
 #define ON_OFF_PIN 41
+#define ULTRASONIC_ECHO_PIN 42
+#define ULTRASONIC_TRIG_PIN 44
 #define SELECTOR_PIN_0 43
 #define SELECTOR_PIN_1 45
 
-// filler
-#define FILL_TIME_MAX 5000 // max time to fill in ms
-
-// touch screen
-// pins
-#define YP A3
-#define XM A2
-#define YM 9
-#define XP 8
-// calibration
-#define TS_MINX 110
-#define TS_MAXX 913
-#define TS_MINY 90
-#define TS_MAXY 950
-
-#define MINPRESSURE 10
-#define MAXPRESSURE 1000
-
-enum Actions
+enum Status
 {
     READY,
     HOMING,
     MOVING,
     FILLING,
     EMPTYING,
-    STOPPED
+    STOPPED,
+    DONE
 };
 
 enum Sign

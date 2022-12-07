@@ -11,16 +11,16 @@ void setup()
     // init steppers if ON/OFF switch is on
     if (digitalRead(ON_OFF_PIN) == HIGH)
     {
-        G::current_action[0] = digitalRead(SELECTOR_PIN_0) ? HOMING : STOPPED;
-        G::current_action[1] = digitalRead(SELECTOR_PIN_1) ? HOMING : STOPPED;
+        current_status[0] = digitalRead(SELECTOR_PIN_0) ? HOMING : STOPPED;
+        current_status[1] = digitalRead(SELECTOR_PIN_1) ? HOMING : STOPPED;
     }
     else
     {
-        G::current_action[0] = STOPPED;
-        G::current_action[1] = STOPPED;
+        current_status[0] = STOPPED;
+        current_status[1] = STOPPED;
 
-        G::filler_0.empty();
-        G::filler_1.empty();
+        fillers[0].empty();
+        fillers[1].empty();
     }
 #else
     G::current_action[0] = HOMING;
@@ -29,11 +29,11 @@ void setup()
     Serial.begin(9600);
 
     // lcd setup
-    Draw::init(G::current_action, G::pos_unlock);
+    Draw::init(current_status, G::pos_unlock);
 
     // read from eeprom
-    G::vis_set_pos[0] = EEPROM.get(0, G::stepper_0.set_pos);
-    G::vis_set_pos[1] = EEPROM.get(2, G::stepper_1.set_pos);
+    G::vis_set_pos[0] = EEPROM.get(0, steppers[0].set_pos);
+    G::vis_set_pos[1] = EEPROM.get(2, steppers[1].set_pos);
 }
 
 void loop()
@@ -50,34 +50,56 @@ void loop()
     static uint8_t prev_on_off = curr_on_off;
 
     if (bitRead(~prev_on_off & curr_on_off, 0))
-        G::current_action[0] = HOMING;
+        current_status[0] = HOMING;
     else if (!curr_on_off)
     {
-        G::filler_0.empty();
-        G::current_action[0] = STOPPED;
+        fillers[0].empty();
+        current_status[0] = STOPPED;
     }
 
     if (bitRead(~prev_on_off & curr_on_off, 1))
-        G::current_action[1] = HOMING;
+        current_status[1] = HOMING;
     else if (!curr_on_off)
     {
-        G::filler_1.empty();
-        G::current_action[1] = STOPPED;
+        fillers[1].empty();
+        current_status[1] = STOPPED;
     }
 
     prev_on_off = curr_on_off;
 #endif
 
-    // update steppers (move to set_pos || home on startup)
-    G::stepper_0.update();
-    G::stepper_1.update();
+#ifndef DISABLE_ULTRA_SONIC_CHECK
+    static Ultrasonic ultrasonic(ULTRASONIC_TRIG_PIN, ULTRASONIC_ECHO_PIN);
 
-    // update fillers
-    G::filler_0.update();
-    G::filler_1.update();
+    // check if product tank is not empty
+    if (ultrasonic.get_avg_dist() > MAX_DISTANCE)
+    {
+        current_status[0] = STOPPED;
+        current_status[1] = STOPPED;
+        Draw::print_error("Err: Tank Empty.");
+    }
+#endif
+
+    // for each stepper and filler ---------------------------------------------
+    for (uint8_t i = 0; i < 2; i++)
+    {
+        // update steppers (move to set_pos || home on startup)
+        if ((current_status[i] = steppers[i].update(current_status[i])) == DONE)
+        {
+            // if the stepper is done moving, cycle the filler
+            current_status[i] = fillers[i].fill_cycle(current_status[i]);
+        }
+
+        // update fillers
+        current_status[i] = fillers[i].update(current_status[i]);
+    }
 
     // draw on lcd -------------------------------------------------------------
-    Draw::action(G::current_action);
+    Draw::status(current_status);
+
+    uint16_t act_val[2] = {steppers[0].actual_pos, steppers[1].actual_pos};
+    Draw::volume_indicator(act_val, G::vis_set_pos);
+
     Draw::plus_minus_buttons(0, G::pos_unlock ? TFT_WHITE : TFT_DARKGREY);
     Draw::plus_minus_buttons(SCREEN_WIDTH / 2, G::pos_unlock ? TFT_WHITE : TFT_DARKGREY);
     Draw::lock_button(G::pos_unlock ? TFT_WHITE : TFT_RED);
@@ -87,24 +109,22 @@ void loop()
     if (G::vis_set_pos[0] != EEPROM.get(0, temp) || G::vis_set_pos[1] != EEPROM.get(2, temp))
     {
         // if the buttons are not already drawn, draw them
-        if (!G::not_saved)
+        if (!not_saved)
         {
-            G::not_saved = true;
+            not_saved = true;
             Draw::apply_cancel_buttons();
         }
     }
-    else if (G::not_saved)
+    else if (not_saved)
     {
+        // set stepper set_pos to the value vis_set_pos
+        steppers[0].set_pos = G::vis_set_pos[0];
+        steppers[1].set_pos = G::vis_set_pos[1];
+
         // if the buttons are drawn, clear them
-        G::not_saved = false;
         Draw::clear_buttons();
-    }
-    // TODO: move to Draw::volume_indicator()
-    if (G::redraw_set_vol)
-    {
-        G::redraw_set_vol = false;
-        Draw::volume_indicator(G::stepper_0.actual_pos, G::vis_set_pos[0]);
-        Draw::volume_indicator(G::stepper_1.actual_pos, G::vis_set_pos[1], SCREEN_WIDTH / 2);
+
+        not_saved = false;
     }
 
     // touch screen handling ---------------------------------------------

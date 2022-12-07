@@ -1,12 +1,7 @@
 #include "headers/stepper.h"
-#include "headers/global.h"
-#include "headers/draw.h"
-
-// instance count
-uint8_t Stepper::instance_count = 0;
 
 Stepper::Stepper(Pins pins)
-    : pins(pins), instance_id(instance_count++)
+    : pins(pins)
 {
     // pin setup
     pinMode(pins.STEP, OUTPUT);
@@ -16,19 +11,21 @@ Stepper::Stepper(Pins pins)
     pinMode(pins.HIGH_LIMIT_SWITCH, INPUT_PULLUP);
 }
 
-void Stepper::update()
+Status Stepper::update(Status curr_status)
 {
-    // TODO: error handling
-
-    // use micros() to create async delay between steps
+    // only update if 500us have passed since last update
     if (micros() - last_step_time < 500)
-        return;
+        return curr_status;
+
+    // TODO: error handling
 
     // clamp set_pos to 0 and MAX_POS
     set_pos = constrain((int32_t)set_pos, 0, MAX_POS);
 
-    // home the stepper on startup
-    if (G::current_action[instance_id] == Actions::HOMING)
+    // home the stepper on startups
+    switch (curr_status)
+    {
+    case Status::HOMING:
     {
         if (digitalRead(pins.LOW_LIMIT_SWITCH) == LOW)
         {
@@ -36,31 +33,18 @@ void Stepper::update()
             digitalWrite(pins.STEP, HIGH);
             delayMicroseconds(500);
             digitalWrite(pins.STEP, LOW);
-            return;
+            return Status::HOMING;
         }
 
-        G::current_action[instance_id] = Actions::READY;
-        first_after_homing = true;
+        return Status::MOVING;
     }
-    if (G::current_action[instance_id] == Actions::READY ||
-        G::current_action[instance_id] == Actions::MOVING)
-    {
-        // if-guard: READY if set_pos achieved
-        if (set_pos == actual_pos)
-        {
-            G::current_action[instance_id] = Actions::READY;
-            if (first_after_homing)
-            {
-                first_after_homing = false;
-                if (instance_id == 0)
-                    G::filler_0.fill_cycle();
-                else if (instance_id == 1)
-                    G::filler_1.fill_cycle();
-            }
-            return;
-        }
 
-        G::current_action[instance_id] = MOVING;
+    case Status::READY:
+    case Status::MOVING:
+    {
+        // if-guard: return true if set_pos achieved (aka READY)
+        if (set_pos == actual_pos)
+            return Status::DONE;
 
         bool dir = set_pos > actual_pos ? FORWARD : BACKWARD;
 
@@ -73,10 +57,13 @@ void Stepper::update()
         digitalWrite(pins.STEP, LOW);
         actual_pos += dir == FORWARD ? 1 : -1;
 
-        // redraw the volume indicator every 200th step (to reduce drawing time)
-        G::redraw_set_vol = !(actual_pos % 500) || actual_pos == set_pos;
-
         last_step_time = micros();
+
+        return Status::MOVING;
+    }
+
+    default:
+        return curr_status;
     }
 }
 

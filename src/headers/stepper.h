@@ -2,7 +2,7 @@
 #include <EEPROM.h>
 #include <Arduino.h>
 #include "constants.h"
-#include "helpers.h"
+#include "utils.h"
 
 class Stepper
 {
@@ -20,14 +20,11 @@ public:
     };
 
     Stepper(Pins pins);
-    void update();
-    void fill_cycle();
+
+    // returns the current status if the stepper is ready
+    Status update(Status curr_status);
 
 private:
     const Pins pins;
     uint64_t last_step_time = 0;
-
-    const uint8_t instance_id;
-    static uint8_t instance_count;
-    bool first_after_homing = false;
 };

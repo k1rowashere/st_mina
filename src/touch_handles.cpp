@@ -25,7 +25,6 @@
                 G::vis_set_pos[pos] = MAX_POS;                     \
                                                                    \
             hold_counter++;                                        \
-            G::redraw_set_vol = true;                              \
             last_call_ms = millis();                               \
         }                                                          \
     }
@@ -39,9 +38,6 @@ INC_DEC(1, POSITIVE)
 // apply button handler (save to eeprom)
 void apply()
 {
-    G::stepper_0.set_pos = G::vis_set_pos[0];
-    G::stepper_1.set_pos = G::vis_set_pos[1];
-
     // save volume to EEPROM
     EEPROM.put(0, G::vis_set_pos[0]);
     EEPROM.put(4, G::vis_set_pos[1]);
@@ -51,11 +47,9 @@ void apply()
 // cancel button handler
 void cancel()
 {
-    // reset set_pos to position in EEPROM
-    G::vis_set_pos[0] = G::stepper_0.set_pos;
-    G::vis_set_pos[1] = G::stepper_1.set_pos;
-
-    G::redraw_set_vol = true;
+    // reset vis_set_pos
+    G::vis_set_pos[0] = EEPROM.read(0);
+    G::vis_set_pos[1] = EEPROM.read(4);
 }
 
 // lock button handler

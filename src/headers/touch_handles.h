@@ -2,6 +2,8 @@
 #include "draw.h"
 #include "global.h"
 
+#include <EEPROM.h>
+
 #define INC_DEC__(pos, sign) inc_dec_##pos##_##sign
 
 // macro to create +/- buttons handlers
