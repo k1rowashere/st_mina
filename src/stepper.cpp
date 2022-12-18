@@ -3,10 +3,8 @@
 Stepper::Stepper(Pins pins)
     : pins(pins)
 {
-    // pin setup
     pinMode(pins.STEP, OUTPUT);
     pinMode(pins.DIR, OUTPUT);
-    pinMode(pins.EN, OUTPUT);
     pinMode(pins.LOW_LIMIT_SWITCH, INPUT_PULLUP);
     pinMode(pins.HIGH_LIMIT_SWITCH, INPUT_PULLUP);
 }
@@ -23,33 +21,36 @@ Status Stepper::update(Status curr_status)
     set_pos = constrain((int32_t)set_pos, 0, MAX_POS);
 
     // home the stepper on startups
-    switch (curr_status)
+    if (curr_status == Status::HOMING)
     {
-    case Status::HOMING:
-    {
-        if (digitalRead(pins.LOW_LIMIT_SWITCH) == LOW)
+        if (digitalRead(pins.LOW_LIMIT_SWITCH) == LOW) // inactive on HIGH
         {
-            digitalWrite(pins.DIR, BACKWARD);
-            digitalWrite(pins.STEP, HIGH);
-            delayMicroseconds(500);
-            digitalWrite(pins.STEP, LOW);
-            return Status::HOMING;
+            actual_pos = 0;
+            return Status::MOVING;
         }
 
-        return Status::MOVING;
+        digitalWrite(pins.DIR, BACKWARD);
+        digitalWrite(pins.STEP, HIGH);
+        delayMicroseconds(500);
+        digitalWrite(pins.STEP, LOW);
+        return Status::HOMING;
     }
-
-    case Status::READY:
-    case Status::MOVING:
+    else if (curr_status == Status::READY || curr_status == Status::MOVING)
     {
-        // if-guard: return true if set_pos achieved (aka READY)
+        // if-guard: return DONE if set_pos achieved
         if (set_pos == actual_pos)
-            return Status::DONE;
+            return curr_status == Status::MOVING ? Status::DONE : Status::READY;
 
-        bool dir = set_pos > actual_pos ? FORWARD : BACKWARD;
+        Direction dir = set_pos > actual_pos ? FORWARD : BACKWARD;
 
         // set direction
         digitalWrite(pins.DIR, dir);
+
+        // if limit switch is hit, return
+        if (dir == FORWARD && digitalRead(pins.HIGH_LIMIT_SWITCH) == LOW)
+            return Status::MOVING;
+        if (dir == BACKWARD && digitalRead(pins.LOW_LIMIT_SWITCH) == LOW)
+            return Status::MOVING;
 
         // step once
         digitalWrite(pins.STEP, HIGH);
@@ -61,16 +62,12 @@ Status Stepper::update(Status curr_status)
 
         return Status::MOVING;
     }
-
-    default:
+    else
         return curr_status;
-    }
 }
 
 // void error()
 // {
-//     // if limit switch is pressed, don't step in that direction
-//     // TODO: set error flag
 //     if (dir == FORWARD && digitalRead(pins.HIGH_LIMIT_SWITCH) == HIGH)
 //         return;
 //     if (dir == BACKWARD && digitalRead(pins.LOW_LIMIT_SWITCH) == HIGH)

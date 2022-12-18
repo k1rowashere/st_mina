@@ -1,5 +1,4 @@
 #pragma once
-
 #include "utils.h"
 
 #define SPEED_OF_SOUND 343

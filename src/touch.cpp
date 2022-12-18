@@ -14,8 +14,8 @@ TSPoint Touch::read(void)
     digitalWrite(XM, HIGH);
 
     // calibration
-    tp.x = map(tp.x, TS_MINX, TS_MAXX, 0, 320);
-    tp.y = map(tp.y, TS_MINY, TS_MAXY, 0, 480);
+    tp.x = map(tp.x, TS_MINX, TS_MAXX, 320, 0);
+    tp.y = map(tp.y, TS_MINY, TS_MAXY, 480, 0);
 
     // swap x and y because of rotation
     int temp = tp.x;

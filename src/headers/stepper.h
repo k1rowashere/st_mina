@@ -1,6 +1,4 @@
 #pragma once
-#include <EEPROM.h>
-#include <Arduino.h>
 #include "constants.h"
 #include "utils.h"
 
@@ -20,6 +18,7 @@ public:
     };
 
     Stepper(Pins pins);
+    // void init();
 
     // returns the current status if the stepper is ready
     Status update(Status curr_status);

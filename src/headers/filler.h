@@ -1,6 +1,7 @@
 #pragma once
 
 #include "constants.h"
+#include "draw.h"
 
 class Filler
 {
@@ -24,8 +25,6 @@ public:
     Status fill_cycle(Status status);
 
 private:
-    void error();
-
     uint8_t prev_state = 0;
 
     const uint8_t instance_id;

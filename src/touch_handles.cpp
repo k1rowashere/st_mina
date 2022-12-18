@@ -40,7 +40,8 @@ void apply()
 {
     // save volume to EEPROM
     EEPROM.put(0, G::vis_set_pos[0]);
-    EEPROM.put(4, G::vis_set_pos[1]);
+    EEPROM.put(2, G::vis_set_pos[1]);
+
     Draw::apply_success();
 }
 
@@ -48,17 +49,34 @@ void apply()
 void cancel()
 {
     // reset vis_set_pos
-    G::vis_set_pos[0] = EEPROM.read(0);
-    G::vis_set_pos[1] = EEPROM.read(4);
+    G::vis_set_pos[0] = eeprom_read<uint16_t>(0);
+    G::vis_set_pos[1] = eeprom_read<uint16_t>(2);
 }
 
 // lock button handler
 void lock()
 {
-    static uint32_t last_call = 0;
     // cooldown
+    static uint32_t last_call = 0;
     if (millis() - last_call < 500)
         return;
-    G::pos_unlock = !G::pos_unlock;
     last_call = millis();
+
+    G::pos_unlock = !G::pos_unlock;
+}
+
+
+void ack()
+{
+    // cooldown
+    static uint32_t last_call = 0;
+    if (millis() - last_call < 500)
+        return;
+    last_call = millis();
+
+    // clear buttons
+    Draw::clear_error();
+
+    // reset status
+    G::clear_error = true;
 }

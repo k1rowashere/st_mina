@@ -7,67 +7,71 @@ void setup()
     pinMode(SELECTOR_PIN_0, INPUT_PULLUP);
     pinMode(SELECTOR_PIN_1, INPUT_PULLUP);
 
+    Serial.begin(9600);
+
+    // init steppers
+    // steppers[0].init();
+    // steppers[1].init();
+
+    // init fillers
+    // fillers[0].init();
+    // fillers[1].init();
 #ifndef DISABLE_SWITCHES
     // init steppers if ON/OFF switch is on
-    if (digitalRead(ON_OFF_PIN) == HIGH)
+    if (digitalRead(ON_OFF_PIN) == LOW)
     {
-        current_status[0] = digitalRead(SELECTOR_PIN_0) ? HOMING : STOPPED;
-        current_status[1] = digitalRead(SELECTOR_PIN_1) ? HOMING : STOPPED;
+        current_status[0] = !digitalRead(SELECTOR_PIN_0) ? HOMING : STOPPED;
+        current_status[1] = !digitalRead(SELECTOR_PIN_1) ? HOMING : STOPPED;
     }
     else
     {
         current_status[0] = STOPPED;
         current_status[1] = STOPPED;
-
-        fillers[0].empty();
-        fillers[1].empty();
     }
 #else
     G::current_action[0] = HOMING;
     G::current_action[1] = HOMING;
 #endif
-    Serial.begin(9600);
 
     // lcd setup
     Draw::init(current_status, G::pos_unlock);
 
     // read from eeprom
-    G::vis_set_pos[0] = EEPROM.get(0, steppers[0].set_pos);
-    G::vis_set_pos[1] = EEPROM.get(2, steppers[1].set_pos);
+    G::vis_set_pos[0] = eeprom_read<uint16_t>(0);
+    G::vis_set_pos[1] = eeprom_read<uint16_t>(2);
+
+    steppers[0].set_pos = G::vis_set_pos[0];
+    steppers[1].set_pos = G::vis_set_pos[1];
 }
 
 void loop()
 {
-
+    // check switches ----------------------------------------------------------    
 #ifndef DISABLE_SWITCHES
-    // detect rising edge on ON/OFF switch and selector switches
+    // detect falling edge on ON/OFF switch and selector switches
     // if ON/OFF & selector switch are on, init steppers
     // if ON/OFF switch is off, stop steppers and empty fillers
     uint8_t curr_on_off = 0;
-    bitWrite(curr_on_off, 0, digitalRead(ON_OFF_PIN) && digitalRead(SELECTOR_PIN_0));
-    bitWrite(curr_on_off, 1, digitalRead(ON_OFF_PIN) && digitalRead(SELECTOR_PIN_1));
+    bitWrite(curr_on_off, 0, !digitalRead(ON_OFF_PIN) && !digitalRead(SELECTOR_PIN_0));
+    bitWrite(curr_on_off, 1, !digitalRead(ON_OFF_PIN) && !digitalRead(SELECTOR_PIN_1));
 
     static uint8_t prev_on_off = curr_on_off;
 
-    if (bitRead(~prev_on_off & curr_on_off, 0))
-        current_status[0] = HOMING;
-    else if (!curr_on_off)
+    for (uint8_t i = 0; i < 2; i++)
     {
-        fillers[0].empty();
-        current_status[0] = STOPPED;
-    }
-
-    if (bitRead(~prev_on_off & curr_on_off, 1))
-        current_status[1] = HOMING;
-    else if (!curr_on_off)
-    {
-        fillers[1].empty();
-        current_status[1] = STOPPED;
+        if (bitRead(~prev_on_off & curr_on_off, i))
+            current_status[i] = HOMING;
+        else if (!bitRead(curr_on_off, i))
+        {
+            current_status[i] = STOPPED;
+            fillers[i].empty();
+        }
     }
 
     prev_on_off = curr_on_off;
 #endif
 
+    // check ultrasonic sensor -------------------------------------------------
 #ifndef DISABLE_ULTRA_SONIC_CHECK
     static Ultrasonic ultrasonic(ULTRASONIC_TRIG_PIN, ULTRASONIC_ECHO_PIN);
 
@@ -76,37 +80,52 @@ void loop()
     {
         current_status[0] = STOPPED;
         current_status[1] = STOPPED;
-        Draw::print_error("Err: Tank Empty.");
+        Draw::error("Err: Tank Empty.", Side::LHS);
     }
 #endif
 
-    // for each stepper and filler ---------------------------------------------
+    // check if error is cleared ----------------------------------------------
+    if (G::clear_error)
+    {
+        Draw::clear_error();
+        G::clear_error = false;
+        for (uint8_t i = 0; i < 2; i++)
+            current_status[i] = (current_status[i] == Status::ERROR) ? fillers[i].empty() : current_status[i];
+    }
+
+    if (current_status[0] == Status::ERROR || current_status[1] == Status::ERROR)
+        ack_flag = true;
+    else
+        ack_flag = false;
+
+    // update steppers and fillers ---------------------------------------------
     for (uint8_t i = 0; i < 2; i++)
     {
         // update steppers (move to set_pos || home on startup)
-        if ((current_status[i] = steppers[i].update(current_status[i])) == DONE)
-        {
-            // if the stepper is done moving, cycle the filler
-            current_status[i] = fillers[i].fill_cycle(current_status[i]);
-        }
+        current_status[i] = steppers[i].update(current_status[i]);
+
+        // if the stepper is done homing + moving back to set_pos, empty the filler
+        if (current_status[i] == Status::DONE)
+            current_status[i] = fillers[i].empty();
 
         // update fillers
         current_status[i] = fillers[i].update(current_status[i]);
     }
 
+
     // draw on lcd -------------------------------------------------------------
     Draw::status(current_status);
+    // if either stepper is moving, skip drawing the volume indicator / touch buttons (to prevent lag)
+    // if (current_status[0] != Status::MOVING || current_status[1] != Status::MOVING)
+    //     return;
 
-    uint16_t act_val[2] = {steppers[0].actual_pos, steppers[1].actual_pos};
+    const uint16_t act_val[2] = { steppers[0].actual_pos, steppers[1].actual_pos };
     Draw::volume_indicator(act_val, G::vis_set_pos);
-
-    Draw::plus_minus_buttons(0, G::pos_unlock ? TFT_WHITE : TFT_DARKGREY);
-    Draw::plus_minus_buttons(SCREEN_WIDTH / 2, G::pos_unlock ? TFT_WHITE : TFT_DARKGREY);
+    Draw::plus_minus_buttons(G::pos_unlock ? TFT_WHITE : TFT_DARKGREY);
     Draw::lock_button(G::pos_unlock ? TFT_WHITE : TFT_RED);
 
-    uint16_t temp;
     // if set_pos is not equal to the value in EEPROM, show save and cancel buttons
-    if (G::vis_set_pos[0] != EEPROM.get(0, temp) || G::vis_set_pos[1] != EEPROM.get(2, temp))
+    if (eeprom_read<uint32_t>(0) != *(uint32_t*)G::vis_set_pos)
     {
         // if the buttons are not already drawn, draw them
         if (!not_saved)
@@ -126,6 +145,7 @@ void loop()
 
         not_saved = false;
     }
+
 
     // touch screen handling ---------------------------------------------
     Touch::run_handles(handles, sizeof(handles) / sizeof(handles[0]));

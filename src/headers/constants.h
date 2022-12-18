@@ -1,8 +1,10 @@
 #pragma once
 #include <Arduino.h>
 
-#define DEBUG
+// #define DEBUG
 // #define DISABLE_SWITCHES
+#define DISABLE_ULTRA_SONIC_CHECK
+// #define FILLER_DEBUG
 
 constexpr uint16_t STEPS_PER_REV = 200;  // Number of steps per revolution
 constexpr uint16_t CYLINDER_RADIUS = 36; // Radius of the cylinder in mm
@@ -45,18 +47,19 @@ constexpr int32_t MAX_POS = (int32_t)STEPS_PER_REV * HEIGHT / THREAD_PITCH; // M
 #define ON_OFF_PIN 41
 #define ULTRASONIC_ECHO_PIN 42
 #define ULTRASONIC_TRIG_PIN 44
-#define SELECTOR_PIN_0 43
-#define SELECTOR_PIN_1 45
+#define SELECTOR_PIN_1 43
+#define SELECTOR_PIN_0 45
 
 enum Status
 {
     READY,
     HOMING,
     MOVING,
+    DONE,
     FILLING,
     EMPTYING,
     STOPPED,
-    DONE
+    ERROR
 };
 
 enum Sign
