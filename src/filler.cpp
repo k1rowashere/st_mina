@@ -11,26 +11,29 @@ Filler::Filler(Pins pins)
     pinMode(pins.PEDAL, INPUT_PULLUP);
     pinMode(pins.FILL_LIMIT_FULL, INPUT_PULLUP);
     pinMode(pins.FILL_LIMIT_EMPTY, INPUT_PULLUP);
+
+    digitalWrite(pins.LOAD_SOLENOID, HIGH);
+    digitalWrite(pins.UNLOAD_SOLENOID, HIGH);
 }
 
 Status Filler::empty()
 {
-    digitalWrite(pins.LOAD_SOLENOID, LOW);
-    digitalWrite(pins.UNLOAD_SOLENOID, HIGH);
+    digitalWrite(pins.LOAD_SOLENOID, HIGH);
+    digitalWrite(pins.UNLOAD_SOLENOID, LOW);
     return Status::EMPTYING;
 }
 
 Status Filler::fill()
 {
-    digitalWrite(pins.LOAD_SOLENOID, HIGH);
-    digitalWrite(pins.UNLOAD_SOLENOID, LOW);
+    digitalWrite(pins.LOAD_SOLENOID, LOW);
+    digitalWrite(pins.UNLOAD_SOLENOID, HIGH);
     return Status::FILLING;
 }
 
 void Filler::stop()
 {
-    digitalWrite(pins.LOAD_SOLENOID, LOW);
-    digitalWrite(pins.UNLOAD_SOLENOID, LOW);
+    digitalWrite(pins.LOAD_SOLENOID, HIGH);
+    digitalWrite(pins.UNLOAD_SOLENOID, HIGH);
 }
 
 /*
