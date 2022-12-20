@@ -45,10 +45,12 @@ constexpr int32_t MAX_POS = (int32_t)STEPS_PER_REV * HEIGHT / THREAD_PITCH; // M
 
 #define FILL_PEDAL_PIN 40
 #define ON_OFF_PIN 41
-#define ULTRASONIC_ECHO_PIN 42
-#define ULTRASONIC_TRIG_PIN 44
+#define SELECTOR_PIN_0 42
 #define SELECTOR_PIN_1 43
-#define SELECTOR_PIN_0 45
+
+#define LED_R 44
+#define LED_G 45
+#define LED_B 46
 
 enum Status
 {

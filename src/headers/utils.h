@@ -77,3 +77,62 @@ public:
         return size() == N;
     }
 };
+
+
+// rgb led functions
+struct RGB
+{
+    uint8_t r;
+    uint8_t g;
+    uint8_t b;
+};
+
+inline RGB hue_to_rgb(uint16_t hue)
+{
+    RGB rgb = { 0, 0, 0 };
+
+    if (hue < 60)
+    {
+        rgb.r = 255;
+        rgb.g = hue * 255 / 60;
+    }
+    else if (hue < 120)
+    {
+        rgb.r = (120 - hue) * 255 / 60;
+        rgb.g = 255;
+    }
+    else if (hue < 180)
+    {
+        rgb.g = 255;
+        rgb.b = (hue - 120) * 255 / 60;
+    }
+    else if (hue < 240)
+    {
+        rgb.g = (240 - hue) * 255 / 60;
+        rgb.b = 255;
+    }
+    else if (hue < 300)
+    {
+        rgb.r = (hue - 240) * 255 / 60;
+        rgb.b = 255;
+    }
+    else
+    {
+        rgb.r = 255;
+        rgb.b = (360 - hue) * 255 / 60;
+    }
+
+    return rgb;
+}
+inline void rgb(RGB color)
+{
+    constrain(color.r, 0, 255);
+    constrain(color.g, 0, 255);
+    constrain(color.b, 0, 255);
+
+    const float f = 1.5 / 5;
+    analogWrite(LED_R, color.r * f);
+    analogWrite(LED_G, color.g * f);
+    analogWrite(LED_B, color.b * f);
+}
+

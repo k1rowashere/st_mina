@@ -7,6 +7,10 @@ void setup()
     pinMode(SELECTOR_PIN_0, INPUT_PULLUP);
     pinMode(SELECTOR_PIN_1, INPUT_PULLUP);
 
+    pinMode(LED_R, OUTPUT);
+    pinMode(LED_G, OUTPUT);
+    pinMode(LED_B, OUTPUT);
+
     Serial.begin(9600);
 
     // init steppers
@@ -112,6 +116,20 @@ void loop()
         current_status[i] = fillers[i].update(current_status[i]);
     }
 
+    // cosmetic led ------------------------------------------------------------
+#ifndef DISABLE_LED
+    static uint16_t hue = 0;
+    static uint32_t last_time = millis();
+
+    if (hue == 360)
+        hue = 0;
+
+    if (millis() - last_time > 10)
+    {
+        last_time = millis();
+        rgb(hue_to_rgb(hue++));
+    }
+#endif
 
     // draw on lcd -------------------------------------------------------------
     Draw::status(current_status);
