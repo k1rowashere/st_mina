@@ -6,7 +6,7 @@ void Draw::init(const Status(&current_status)[2], bool pos_unlock)
 {
     uint16_t ID = tft.readID();
     tft.begin(ID);
-    tft.setRotation(1);
+    tft.setRotation(3);
     tft.fillScreen(TFT_BLACK);
     tft.drawFastVLine(SCREEN_WIDTH / 2, 0, SCREEN_HEIGHT / 2, TFT_WHITE);
 
