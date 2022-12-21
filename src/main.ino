@@ -119,23 +119,24 @@ void loop()
     // cosmetic led ------------------------------------------------------------
 #ifndef DISABLE_LED
     static uint16_t hue = 0;
-    static uint32_t last_time = millis();
+    static uint32_t last_led_time = millis();
 
     if (hue == 360)
         hue = 0;
 
-    if (millis() - last_time > 10)
+    if (millis() - last_led_time > 10)
     {
-        last_time = millis();
+        last_led_time = millis();
         rgb(hue_to_rgb(hue++));
     }
 #endif
-
     // draw on lcd -------------------------------------------------------------
+    static uint32_t last_draw_time = millis();
     Draw::status(current_status);
     // if either stepper is moving, skip drawing the volume indicator / touch buttons (to prevent lag)
-    // if (current_status[0] != Status::MOVING || current_status[1] != Status::MOVING)
-    //     return;
+    if (current_status[0] == Status::MOVING || current_status[1] == Status::MOVING)
+        if (millis() - last_draw_time < 1000)
+            return;
 
     const uint16_t act_val[2] = { steppers[0].actual_pos, steppers[1].actual_pos };
     Draw::volume_indicator(act_val, G::vis_set_pos);
@@ -167,4 +168,5 @@ void loop()
 
     // touch screen handling ---------------------------------------------
     Touch::run_handles(handles, sizeof(handles) / sizeof(handles[0]));
+    last_draw_time = millis();
 }
