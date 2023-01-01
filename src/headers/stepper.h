@@ -21,7 +21,7 @@ public:
     // void init();
 
     // returns the current status if the stepper is ready
-    Status update(Status curr_status);
+    Status update(Status status);
 
 private:
     const Pins pins;

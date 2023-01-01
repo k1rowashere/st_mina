@@ -12,18 +12,18 @@ Stepper::Stepper(Pins pins)
     digitalWrite(pins.EN, HIGH);    // disable stepper
 }
 
-Status Stepper::update(Status curr_status)
+Status Stepper::update(Status status)
 {
     // only update if 500us have passed since last update
     if (micros() - last_step_time < 500)
-        return curr_status;
+        return status;
 
 
     // clamp set_pos to 0 and MAX_POS
     set_pos = constrain((int32_t)set_pos, 0, MAX_POS);
 
     // home the stepper on startups
-    if (curr_status == Status::HOMING)
+    if (status == Status::HOMING)
     {
         if (digitalRead(pins.LOW_LIMIT_SWITCH) == LOW) // inactive on HIGH
         {
@@ -41,7 +41,7 @@ Status Stepper::update(Status curr_status)
 
         return Status::HOMING;
     }
-    else if (curr_status == Status::READY || curr_status == Status::MOVING)
+    else if (status == Status::READY || status == Status::MOVING)
     {
         // limit switch handling
         if (digitalRead(pins.HIGH_LIMIT_SWITCH) == LOW)
@@ -53,7 +53,7 @@ Status Stepper::update(Status curr_status)
         if (set_pos == actual_pos)
         {
             digitalWrite(pins.EN, HIGH);        // disable stepper
-            return (curr_status == Status::MOVING) ? Status::DONE : Status::READY;
+            return (status == Status::MOVING) ? Status::DONE : Status::READY;
         }
 
         Direction dir = set_pos > actual_pos ? FORWARD : BACKWARD;
@@ -75,7 +75,7 @@ Status Stepper::update(Status curr_status)
         return Status::MOVING;
     }
     else
-        return curr_status;
+        return status;
 }
 
 // void error()

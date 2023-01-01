@@ -89,6 +89,7 @@ Status Filler::fill_cycle(Status status)
             return Status::READY;
         }
     }
+    return status;
 }
 
 Status Filler::update(Status status)
@@ -98,25 +99,25 @@ Status Filler::update(Status status)
         return status;
 
 #ifndef FILLER_DEBUG
-    // timeout
-    // If state is FILLING for more than FILL_TIMING_MAX, then set to READY
-    // static uint32_t fill_start_time = 0;
-    // if (status == Status::FILLING || status == Status::EMPTYING)
-    // {
-    //     if (fill_start_time == 0)
-    //         fill_start_time = millis();
+    // // // timeout
+    // // // If state is FILLING for more than FILL_TIMING_MAX, then set to READY
+    // // static uint32_t fill_start_time = 0;
+    // // if (status == Status::FILLING || status == Status::EMPTYING)
+    // // {
+    // //     if (fill_start_time == 0)
+    // //         fill_start_time = millis();
 
-    //     else if (millis() - fill_start_time > FILL_TIME_MAX)
-    //     {
-    //         // stop solenoids
-    //         stop();
-    //         status = Status::ERROR;
-    //         Draw::error("FILL TIMEOUT REACHED", instance_id ? RHS : LHS);
-    //         fill_start_time = 0;
-    //     }
-    // }
-    // else
-    //     fill_start_time = 0;
+    // //     else if (millis() - fill_start_time > FILL_TIME_MAX)
+    // //     {
+    // //         // stop solenoids
+    // //         stop();
+    // //         status = Status::ERROR;
+    // //         Draw::error("FILL TIMEOUT REACHED", instance_id ? RHS : LHS);
+    // //         fill_start_time = 0;
+    // //     }
+    // // }
+    // // else
+    // //     fill_start_time = 0;
 
     // if both limits are high, then error
     if (digitalRead(pins.FILL_LIMIT_EMPTY) && digitalRead(pins.FILL_LIMIT_FULL))

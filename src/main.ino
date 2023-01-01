@@ -13,13 +13,6 @@ void setup()
 
     Serial.begin(9600);
 
-    // init steppers
-    // steppers[0].init();
-    // steppers[1].init();
-
-    // init fillers
-    // fillers[0].init();
-    // fillers[1].init();
 #ifndef DISABLE_SWITCHES
     // init steppers if ON/OFF switch is on
     if (digitalRead(ON_OFF_PIN) == LOW)
@@ -124,7 +117,7 @@ void loop()
     if (hue == 360)
         hue = 0;
 
-    if (millis() - last_led_time > 10)
+    if (millis() - last_led_time > 50)
     {
         last_led_time = millis();
         rgb(hue_to_rgb(hue++));
