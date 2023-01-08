@@ -130,9 +130,8 @@ inline void rgb(RGB color)
     constrain(color.g, 0, 255);
     constrain(color.b, 0, 255);
 
-    const float f = 1.5 / 5;
-    analogWrite(LED_R, color.r * f);
-    analogWrite(LED_G, color.g * f);
-    analogWrite(LED_B, color.b * f);
+    analogWrite(LED_R, color.r);
+    analogWrite(LED_G, color.g);
+    analogWrite(LED_B, color.b);
 }
 
