@@ -1,5 +1,6 @@
 #pragma once
 #include "constants.h"
+#include "filler.h"
 #include <TouchScreen.h>
 
 // pins
@@ -19,28 +20,28 @@
 
 namespace Touch
 {
-    struct Args
-    {
-        uint16_t *vis_set_pos;
-        Status *current_status;
-        bool &not_saved;
-        bool &ack_flag;
-        bool &pos_unlock;
-        bool &clear_error;
-    };
+struct Args
+{
+    Filler* fillers;
+    uint16_t* vis_set_pos;
+    Status* current_status;
+    bool& not_saved;
+    bool& pos_unlock;
+    bool& clear_error;
+};
 
-    struct Handle
-    {
-        uint16_t x_s;
-        uint16_t y_s;
-        uint16_t w;
-        uint16_t h;
-        void (*callback)(Touch::Args args);
-        bool &condition;
-    };
+struct Handle
+{
+    uint16_t x_s;
+    uint16_t y_s;
+    uint16_t w;
+    uint16_t h;
+    void (*callback)(const Touch::Args& args);
+    bool& condition;
+};
 
-    TSPoint read();
+TSPoint read();
 
-    // run all handlers
-    void run_handles(const Touch::Handle handler[], uint8_t count, Touch::Args args);
-}
+// run all handlers
+void run_handles(const Touch::Handle handler[], uint8_t count, const Touch::Args& args);
+} // namespace Touch

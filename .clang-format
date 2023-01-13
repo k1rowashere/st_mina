@@ -1,0 +1,6 @@
+AlignArrayOfStructures: Left
+PointerAlignment: Left
+ColumnLimit: 0
+BreakBeforeBraces: Allman
+IndentWidth: 4
+TabWidth: 4

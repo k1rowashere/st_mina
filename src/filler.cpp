@@ -1,10 +1,8 @@
 
 #include "headers/filler.h"
 
-uint8_t Filler::instance_count = 0;
-
 Filler::Filler(Pins pins)
-    : pins(pins), instance_id(instance_count++)
+    : pins(pins)
 {
     pinMode(pins.LOAD_SOLENOID, OUTPUT);
     pinMode(pins.UNLOAD_SOLENOID, OUTPUT);
@@ -67,9 +65,6 @@ Status Filler::fill_cycle(Status status)
     bool fl_empty = digitalRead(pins.FILL_LIMIT_EMPTY);
     bool fl_full = digitalRead(pins.FILL_LIMIT_FULL);
 
-    if (!(status == FILLING || status == READY || status == EMPTYING))
-        return status;
-
     if (fl_empty)
     {
         // refill if at empty position
@@ -80,7 +75,7 @@ Status Filler::fill_cycle(Status status)
         if (status == READY && digitalRead(pins.PEDAL) == LOW) // pedal pressed = LOW
         {
             // empty at start of cycle (pedal pressed)
-            return empty();
+                return empty();
         }
         else if (fl_full && status == FILLING)
         {
@@ -97,37 +92,6 @@ Status Filler::update(Status status)
     // return if not ready or filling or emptying
     if (!(status == FILLING || status == READY || status == EMPTYING))
         return status;
-
-#ifndef FILLER_DEBUG
-    // // // timeout
-    // // // If state is FILLING for more than FILL_TIMING_MAX, then set to READY
-    // // static uint32_t fill_start_time = 0;
-    // // if (status == Status::FILLING || status == Status::EMPTYING)
-    // // {
-    // //     if (fill_start_time == 0)
-    // //         fill_start_time = millis();
-
-    // //     else if (millis() - fill_start_time > FILL_TIME_MAX)
-    // //     {
-    // //         // stop solenoids
-    // //         stop();
-    // //         status = Status::ERROR;
-    // //         Draw::error("FILL TIMEOUT REACHED", instance_id ? RHS : LHS);
-    // //         fill_start_time = 0;
-    // //     }
-    // // }
-    // // else
-    // //     fill_start_time = 0;
-
-    // if both limits are high, then error
-    if (digitalRead(pins.FILL_LIMIT_EMPTY) && digitalRead(pins.FILL_LIMIT_FULL))
-    {
-        // stop solenoids
-        stop();
-        Draw::error("LIMIT SWITCH ERROR", instance_id ? RHS : LHS);
-        return Status::ERROR;
-    }
-#endif
 
     // rising edge detection
     uint8_t curr_state = 0;

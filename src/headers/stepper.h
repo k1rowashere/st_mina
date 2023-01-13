@@ -4,7 +4,7 @@
 
 class Stepper
 {
-public:
+  public:
     uint16_t set_pos = 0;
     uint16_t actual_pos = 0;
 
@@ -18,12 +18,11 @@ public:
     };
 
     Stepper(Pins pins);
-    // void init();
 
     // returns the current status if the stepper is ready
     Status update(Status status);
 
-private:
+  private:
     const Pins pins;
     uint64_t last_step_time = 0;
 };

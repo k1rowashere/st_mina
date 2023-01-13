@@ -44,7 +44,7 @@ class Queue
     size_t head = 0;
     size_t tail = 0;
 
-public:
+  public:
     // add an item to the queue
     T push(T item)
     {
@@ -78,7 +78,6 @@ public:
     }
 };
 
-
 // rgb led functions
 struct RGB
 {
@@ -89,7 +88,7 @@ struct RGB
 
 inline RGB hue_to_rgb(uint16_t hue)
 {
-    RGB rgb = { 0, 0, 0 };
+    RGB rgb = {0, 0, 0};
 
     if (hue < 60)
     {
@@ -134,4 +133,3 @@ inline void rgb(RGB color)
     analogWrite(LED_G, color.g);
     analogWrite(LED_B, color.b);
 }
-

@@ -9,7 +9,7 @@ Stepper::Stepper(Pins pins)
     pinMode(pins.LOW_LIMIT_SWITCH, INPUT_PULLUP);
     pinMode(pins.HIGH_LIMIT_SWITCH, INPUT_PULLUP);
 
-    digitalWrite(pins.EN, HIGH);    // disable stepper
+    digitalWrite(pins.EN, HIGH); // disable stepper
 }
 
 Status Stepper::update(Status status)
@@ -17,7 +17,6 @@ Status Stepper::update(Status status)
     // only update if 500us have passed since last update
     if (micros() - last_step_time < 500)
         return status;
-
 
     // clamp set_pos to 0 and MAX_POS
     set_pos = constrain((int32_t)set_pos, 0, MAX_POS);
@@ -30,10 +29,9 @@ Status Stepper::update(Status status)
             actual_pos = 0;
             return Status::MOVING;
         }
-        // enable stepper
-        digitalWrite(pins.EN, LOW);
-        // set direction     
-        digitalWrite(pins.DIR, BACKWARD);
+
+        digitalWrite(pins.EN, LOW);       // enable stepper
+        digitalWrite(pins.DIR, BACKWARD); // set direction
 
         digitalWrite(pins.STEP, HIGH);
         delayMicroseconds(500);
@@ -49,20 +47,17 @@ Status Stepper::update(Status status)
         if (digitalRead(pins.LOW_LIMIT_SWITCH) == LOW)
             actual_pos = 0;
 
-        // if-guard: return DONE if set_pos achieved
+        // if-guard: return READY if set_pos achieved
         if (set_pos == actual_pos)
         {
-            digitalWrite(pins.EN, HIGH);        // disable stepper
-            return (status == Status::MOVING) ? Status::DONE : Status::READY;
+            digitalWrite(pins.EN, HIGH); // disable stepper
+            return Status::READY;
         }
 
         Direction dir = set_pos > actual_pos ? FORWARD : BACKWARD;
 
-        // enable stepper
-        digitalWrite(pins.EN, LOW);
-        // set direction     
-        digitalWrite(pins.DIR, dir);
-
+        digitalWrite(pins.EN, LOW);  // enable stepper
+        digitalWrite(pins.DIR, dir); // set direction
 
         // step once
         digitalWrite(pins.STEP, HIGH);

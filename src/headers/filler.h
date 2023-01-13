@@ -5,7 +5,7 @@
 
 class Filler
 {
-public:
+  public:
     struct Pins
     {
         uint8_t LOAD_SOLENOID;
@@ -24,9 +24,6 @@ public:
     Status update(Status status);
     Status fill_cycle(Status status);
 
-private:
+  private:
     uint8_t prev_state = 0;
-
-    const uint8_t instance_id;
-    static uint8_t instance_count;
 };

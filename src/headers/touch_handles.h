@@ -3,9 +3,11 @@
 #include "touch.h"
 #include <EEPROM.h>
 
+namespace TH
+{
 // +/- buttons handlers, must be in header file
 template <const uint8_t i, const int8_t sign>
-void inc_dec(Touch::Args args)
+void inc_dec(const Touch::Args& args)
 {
     static uint16_t hold_counter(0);
     static uint32_t last_call_ms(0);
@@ -34,8 +36,8 @@ void inc_dec(Touch::Args args)
         last_call_ms = millis();
     }
 }
-
-void apply(Touch::Args args);
-void cancel(Touch::Args args);
-void lock(Touch::Args args);
-void ack(Touch::Args args);
+void apply(const Touch::Args& args);
+void cancel(const Touch::Args& args);
+void lock(const Touch::Args& args);
+void ack(const Touch::Args& args);
+} // namespace TH
