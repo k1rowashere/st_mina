@@ -40,4 +40,6 @@ void apply(const Touch::Args& args);
 void cancel(const Touch::Args& args);
 void lock(const Touch::Args& args);
 void ack(const Touch::Args& args);
+void empty(const Touch::Args& args);
+void fill(const Touch::Args& args);
 } // namespace TH

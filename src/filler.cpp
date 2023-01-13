@@ -74,8 +74,11 @@ Status Filler::fill_cycle(Status status)
     {
         if (status == READY && digitalRead(pins.PEDAL) == LOW) // pedal pressed = LOW
         {
-            // empty at start of cycle (pedal pressed)
+            // empty cylinger if pedal is pressed and cylinder is full
+            if (fl_full)
                 return empty();
+            else
+                return fill();
         }
         else if (fl_full && status == FILLING)
         {

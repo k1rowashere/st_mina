@@ -2,7 +2,7 @@
 
 MCUFRIEND_kbv tft;
 
-void Draw::init(const Status(&current_status)[2], bool pos_unlock)
+void Draw::init(const Status (&current_status)[2], bool pos_unlock)
 {
     uint16_t ID = tft.readID();
     tft.begin(ID);
@@ -38,14 +38,16 @@ void Draw::init(const Status(&current_status)[2], bool pos_unlock)
     // draw buttons
     tft.fillRect(SCREEN_WIDTH / 2 - 25, SCREEN_HEIGHT / 2 - 40, 50, 80, TFT_BLACK);
     tft.drawRect(10, SCREEN_HEIGHT / 2 - 40, SCREEN_WIDTH - 20, 80, TFT_DARKGREY);
-    Draw::lock_button(pos_unlock ? TFT_WHITE : TFT_RED);
-    Draw::plus_minus_buttons();
-    Draw::plus_minus_buttons(SCREEN_WIDTH / 2);
+    Draw::btn_lock(pos_unlock ? TFT_WHITE : TFT_RED);
+    Draw::btn_plus_minus();
+    Draw::btn_plus_minus(SCREEN_WIDTH / 2);
+    Draw::btn_empty_cylinder();
+    Draw::btn_fill_cylinder();
 }
 
-void Draw::status(const Status(&status)[2])
+void Draw::status(const Status (&status)[2])
 {
-    static Status prev_status[2] = { READY, READY };
+    static Status prev_status[2] = {READY, READY};
 
     auto draw = [](Status status, uint16_t x_offset)
     {
@@ -56,14 +58,16 @@ void Draw::status(const Status(&status)[2])
         switch (status)
         {
         case READY:
+            tft.setTextColor(TFT_GREEN);
             tft.print("READY");
             break;
         case FILLING:
-            tft.setTextColor(TFT_GREEN);
+            tft.setTextColor(TFT_CYAN);
             tft.print("FILLING");
             break;
         case EMPTYING:
-            tft.setTextColor(TFT_GREEN);
+        case CLEANING:
+            tft.setTextColor(TFT_PURPLE);
             tft.print("EMPTYING");
             break;
         case HOMING:
@@ -71,7 +75,7 @@ void Draw::status(const Status(&status)[2])
             tft.print("HOMING");
             break;
         case MOVING:
-            tft.setTextColor(TFT_YELLOW);
+            tft.setTextColor(TFT_ORANGE);
             tft.print("MOVING");
             break;
         case STOPPED:
@@ -104,8 +108,8 @@ void Draw::status(const Status(&status)[2])
 
 void Draw::volume_indicator(const uint16_t act_set_pos[2], const uint16_t vis_set_pos[2])
 {
-    static uint16_t prev_act_pos[2] = { UINT16_MAX, UINT16_MAX };
-    static uint16_t prev_set_pos[2] = { UINT16_MAX, UINT16_MAX };
+    static uint16_t prev_act_pos[2] = {UINT16_MAX, UINT16_MAX};
+    static uint16_t prev_set_pos[2] = {UINT16_MAX, UINT16_MAX};
     static uint32_t prev_time = 0;
 
     // rate limit
@@ -145,9 +149,9 @@ void Draw::volume_indicator(const uint16_t act_set_pos[2], const uint16_t vis_se
     }
 }
 
-void Draw::plus_minus_buttons(uint16_t color)
+void Draw::btn_plus_minus(uint16_t color)
 {
-    static uint16_t prev_color[2] = { TFT_BLACK, TFT_BLACK };
+    static uint16_t prev_color[2] = {TFT_BLACK, TFT_BLACK};
 
     for (uint8_t i = 0; i < 2; i++)
     {
@@ -168,7 +172,7 @@ void Draw::plus_minus_buttons(uint16_t color)
     }
 }
 
-void Draw::lock_button(uint16_t color)
+void Draw::btn_lock(uint16_t color)
 {
     static uint16_t prev_color = 0;
     // drawn only if color changed
@@ -191,7 +195,7 @@ void Draw::lock_button(uint16_t color)
     prev_color = color;
 }
 
-void Draw::apply_cancel_buttons()
+void Draw::btn_apply_cancel()
 {
     int x = SCREEN_WIDTH / 4, y = SCREEN_HEIGHT - 50;
 
@@ -204,7 +208,7 @@ void Draw::apply_cancel_buttons()
     tft.print("Cancel");
 }
 
-void Draw::apply_success()
+void Draw::btn_applied()
 {
     int x = SCREEN_WIDTH / 4, y = SCREEN_HEIGHT - 50;
 
@@ -218,10 +222,35 @@ void Draw::apply_success()
     tft.print("Applied");
 }
 
-void Draw::clear_buttons()
+void Draw::btn_clear()
 {
     tft.fillRect(0, SCREEN_HEIGHT - 50, SCREEN_WIDTH / 2 - 1, 50, TFT_BLACK);
     tft.fillRect(SCREEN_WIDTH / 2 + 1, SCREEN_HEIGHT - 50, SCREEN_WIDTH / 2, 50, TFT_BLACK);
+}
+
+void Draw::btn_ack()
+{
+    tft.setTextColor(TFT_ORANGE);
+    tft.fillRect(SCREEN_WIDTH / 2 - 50, SCREEN_HEIGHT - 50, 100, 50, TFT_BLACK);
+    tft.drawRoundRect(SCREEN_WIDTH / 2 - 50, SCREEN_HEIGHT - 50, 100, 50, 10, TFT_WHITE);
+    tft.setCursor(SCREEN_WIDTH / 2 - 12, SCREEN_HEIGHT - 50 + 25 - 8);
+    tft.print("ACK");
+}
+
+void Draw::btn_empty_cylinder()
+{
+    tft.setTextColor(TFT_WHITE);
+    tft.drawRoundRect(SCREEN_WIDTH / 2 - 125, SCREEN_HEIGHT / 2 + 50, 100, 50, 10, TFT_WHITE);
+    tft.setCursor(SCREEN_WIDTH / 2 - 50 + 10, SCREEN_HEIGHT / 2 + 50 + 25 - 8);
+    tft.print("Empty");
+}
+
+void Draw::btn_fill_cylinder()
+{
+    tft.setTextColor(TFT_WHITE);
+    tft.drawRoundRect(SCREEN_WIDTH / 2 + 25, SCREEN_HEIGHT / 2 + 50, 100, 50, 10, TFT_WHITE);
+    tft.setCursor(SCREEN_WIDTH / 2 + 50 + 10, SCREEN_HEIGHT / 2 + 50 + 25 - 8);
+    tft.print("Fill");
 }
 
 void Draw::error(const char* error, Side side)
@@ -229,20 +258,11 @@ void Draw::error(const char* error, Side side)
     tft.setTextColor(TFT_RED);
     tft.setCursor(10 + side, SCREEN_HEIGHT - 50 - 24);
     tft.print(error);
-    acknowledge_error();
+    btn_ack();
 }
 
 void Draw::clear_error(Side side)
 {
     tft.fillRect(side, SCREEN_HEIGHT - 50 - 24, SCREEN_WIDTH, 24, TFT_BLACK);
     tft.fillRect(SCREEN_WIDTH / 2 - 50, SCREEN_HEIGHT - 50, 100, 50, TFT_BLACK);
-}
-
-void Draw::acknowledge_error()
-{
-    tft.setTextColor(TFT_ORANGE);
-    tft.fillRect(SCREEN_WIDTH / 2 - 50, SCREEN_HEIGHT - 50, 100, 50, TFT_BLACK);
-    tft.drawRoundRect(SCREEN_WIDTH / 2 - 50, SCREEN_HEIGHT - 50, 100, 50, 10, TFT_WHITE);
-    tft.setCursor(SCREEN_WIDTH / 2 - 12, SCREEN_HEIGHT - 50 + 25 - 8);
-    tft.print("ACK");
 }

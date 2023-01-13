@@ -54,4 +54,6 @@ constexpr Touch::Handle handles[] PROGMEM = {
     {SCREEN_WIDTH / 4 * 3 - 50, SCREEN_HEIGHT - 50, 100, 50, cancel, not_saved},
     {SCREEN_WIDTH / 2 - 25, SCREEN_HEIGHT / 2 - 25, 50, 50, lock, always_true},
     {SCREEN_WIDTH / 2 - 25, SCREEN_HEIGHT - 50, 50, 50, ack, ack_flag},
+    {SCREEN_WIDTH / 2 - 125, SCREEN_HEIGHT / 2 + 50, 100, 50, empty, always_true},
+    {SCREEN_WIDTH / 2 + 25, SCREEN_HEIGHT / 2 + 50, 100, 50, fill, always_true},
 };

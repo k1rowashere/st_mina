@@ -47,7 +47,7 @@ void loop()
 #ifndef DISABLE_SWITCHES
     // detect falling edge on ON/OFF switch and selector switches
     // if ON/OFF & selector switch are on, init steppers
-    // if ON/OFF switch is off, stop steppers and empty fillers
+    // if ON/OFF switch is off, stop steppers and stop fillers
     uint8_t curr_on_off = 0;
     bitWrite(curr_on_off, 0, !digitalRead(ON_OFF_PIN) && !digitalRead(SELECTOR_PIN_0));
     bitWrite(curr_on_off, 1, !digitalRead(ON_OFF_PIN) && !digitalRead(SELECTOR_PIN_1));
@@ -61,49 +61,32 @@ void loop()
         else if (!bitRead(curr_on_off, i))
         {
             current_status[i] = STOPPED;
-            fillers[i].empty();
+            fillers[i].stop();
         }
     }
 
     prev_on_off = curr_on_off;
 #endif
 
-    // check ultrasonic sensor -------------------------------------------------
-#ifndef DISABLE_ULTRA_SONIC_CHECK
-    static Ultrasonic ultrasonic(ULTRASONIC_TRIG_PIN, ULTRASONIC_ECHO_PIN);
-
-    // check if product tank is not empty
-    if (ultrasonic.get_avg_dist() > MAX_DISTANCE)
-    {
-        current_status[0] = STOPPED;
-        current_status[1] = STOPPED;
-        Draw::error("Err: Tank Empty.", Side::LHS);
-    }
-#endif
-
-    // check if error is cleared ----------------------------------------------
-    if (clear_error)
-    {
-        Draw::clear_error();
-        clear_error = false;
-        for (uint8_t i = 0; i < 2; i++)
-            current_status[i] = (current_status[i] == Status::ERROR) ? fillers[i].empty() : current_status[i];
-    }
-
-    if (current_status[0] == Status::ERROR || current_status[1] == Status::ERROR)
-        ack_flag = true;
-    else
-        ack_flag = false;
+    // // check if error is cleared ----------------------------------------------
+    // // if (clear_error)
+    // // {
+    // //     Draw::clear_error();
+    // //     clear_error = false;
+    // //     for (uint8_t i = 0; i < 2; i++)
+    // //         if (current_status[i] == Status::ERROR)
+    // //             current_status[i] = Status::STOPPED;
+    // // }
+    // // if (current_status[0] == Status::ERROR || current_status[1] == Status::ERROR)
+    // //     ack_flag = true;
+    // // else
+    // //     ack_flag = false;
 
     // update steppers and fillers ---------------------------------------------
     for (uint8_t i = 0; i < 2; i++)
     {
         // update steppers (move to set_pos || home on startup)
         current_status[i] = steppers[i].update(current_status[i]);
-
-        // if the stepper is done homing + moving back to set_pos, empty the filler
-        // if (current_status[i] == Status::DONE)
-        //     current_status[i] = fillers[i].empty();
 
         // update fillers
         current_status[i] = fillers[i].update(current_status[i]);
@@ -123,27 +106,35 @@ void loop()
         rgb(hue_to_rgb(hue++));
     }
 #endif
+
+    // touch screen handling ---------------------------------------------
+    Touch::run_handles(handles, sizeof(handles) / sizeof(handles[0]), touch_args);
+
     // draw on lcd -------------------------------------------------------------
+
+    // if either stepper is moving, limit drawing (to reduce lag)
     static uint32_t last_draw_time = millis();
-    Draw::status(current_status);
-    // if either stepper is moving, skip drawing the volume indicator / touch buttons (to prevent lag)
     if (current_status[0] == Status::MOVING || current_status[1] == Status::MOVING)
         if (millis() - last_draw_time < 1000)
             return;
 
+    last_draw_time = millis();
+
+    Draw::status(current_status);
     const uint16_t act_val[2] = {steppers[0].actual_pos, steppers[1].actual_pos};
     Draw::volume_indicator(act_val, vis_set_pos);
-    Draw::plus_minus_buttons(pos_unlock ? TFT_WHITE : TFT_DARKGREY);
-    Draw::lock_button(pos_unlock ? TFT_WHITE : TFT_RED);
+
+    Draw::btn_plus_minus(pos_unlock ? TFT_WHITE : TFT_DARKGREY);
+    Draw::btn_lock(pos_unlock ? TFT_WHITE : TFT_RED);
 
     // if set_pos is not equal to the value in EEPROM, show save and cancel buttons
-    if (eeprom_read<uint32_t>(0) != *(uint32_t *)vis_set_pos)
+    if (eeprom_read<uint32_t>(0) != *(uint32_t*)vis_set_pos)
     {
         // if the buttons are not already drawn, draw them
         if (!not_saved)
         {
             not_saved = true;
-            Draw::apply_cancel_buttons();
+            Draw::btn_apply_cancel();
         }
     }
     else if (not_saved)
@@ -152,13 +143,7 @@ void loop()
         steppers[0].set_pos = vis_set_pos[0];
         steppers[1].set_pos = vis_set_pos[1];
 
-        // if the buttons are drawn, clear them
-        Draw::clear_buttons();
-
+        Draw::btn_clear();
         not_saved = false;
     }
-
-    // touch screen handling ---------------------------------------------
-    Touch::run_handles(handles, sizeof(handles) / sizeof(handles[0]), touch_args);
-    last_draw_time = millis();
 }

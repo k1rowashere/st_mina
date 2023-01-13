@@ -1,17 +1,17 @@
 #include "headers/touch_handles.h"
 
 // apply button handler (save to eeprom)
-void apply(Touch::Args args)
+void TH::apply(const Touch::Args& args)
 {
     // save volume to EEPROM
     EEPROM.put(0, args.vis_set_pos[0]);
     EEPROM.put(2, args.vis_set_pos[1]);
 
-    Draw::apply_success();
+    Draw::btn_applied();
 }
 
 // cancel button handler
-void cancel(Touch::Args args)
+void TH::cancel(const Touch::Args& args)
 {
     // reset vis_set_pos
     args.vis_set_pos[0] = eeprom_read<uint16_t>(0);
@@ -19,7 +19,7 @@ void cancel(Touch::Args args)
 }
 
 // lock button handler
-void lock(Touch::Args args)
+void TH::lock(const Touch::Args& args)
 {
     // cooldown
     static uint32_t last_call = 0;
@@ -30,7 +30,8 @@ void lock(Touch::Args args)
     args.pos_unlock = !args.pos_unlock;
 }
 
-void ack(Touch::Args args)
+// acknoledge error button handler
+void TH::ack(const Touch::Args& args)
 {
     // cooldown
     static uint32_t last_call = 0;
@@ -43,4 +44,29 @@ void ack(Touch::Args args)
 
     // reset status
     args.clear_error = true;
+}
+
+// empty cylinder button handler
+void TH::empty(const Touch::Args& args)
+{
+    for (uint8_t i = 0; i < 2; i++)
+    {
+        if (args.current_status[i] != Status::READY)
+            continue;
+
+        args.current_status[i] = Status::CLEANING;
+        args.fillers[i].empty();
+    }
+}
+
+// fill cylinder button handler
+void TH::fill(const Touch::Args& args)
+{
+    for (uint8_t i = 0; i < 2; i++)
+    {
+        if (args.current_status[i] != Status::READY && args.current_status[i] != Status::CLEANING)
+            continue;
+
+        args.current_status[i] = args.fillers[i].fill();
+    }
 }
