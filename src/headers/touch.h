@@ -1,6 +1,6 @@
 #pragma once
-#include <TouchScreen.h>
 #include "constants.h"
+#include <TouchScreen.h>
 
 // pins
 #define YP A3
@@ -19,18 +19,28 @@
 
 namespace Touch
 {
+    struct Args
+    {
+        uint16_t *vis_set_pos;
+        Status *current_status;
+        bool &not_saved;
+        bool &ack_flag;
+        bool &pos_unlock;
+        bool &clear_error;
+    };
+
     struct Handle
     {
         uint16_t x_s;
         uint16_t y_s;
         uint16_t w;
         uint16_t h;
-        void (*callback)();
+        void (*callback)(Touch::Args args);
         bool &condition;
     };
 
     TSPoint read();
 
     // run all handlers
-    void run_handles(const Touch::Handle handler[], uint8_t count);
+    void run_handles(const Touch::Handle handler[], uint8_t count, Touch::Args args);
 }

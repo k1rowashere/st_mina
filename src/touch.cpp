@@ -26,7 +26,7 @@ TSPoint Touch::read(void)
 }
 
 // template <typename... Args>
-void Touch::run_handles(const Handle handles[], uint8_t count)
+void Touch::run_handles(const Handle handles[], uint8_t count, Touch::Args args)
 {
     TSPoint tp = Touch::read();
 
@@ -43,7 +43,7 @@ void Touch::run_handles(const Handle handles[], uint8_t count)
                 tp.y < h.y_s + h.h &&
                 h.condition)
             {
-                h.callback();
+                h.callback(args);
             }
         }
     }

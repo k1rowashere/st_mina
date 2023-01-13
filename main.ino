@@ -1,4 +1,4 @@
-#include "headers/main.h"
+#include "src/headers/main.h"
 
 void setup()
 {
@@ -26,24 +26,24 @@ void setup()
         current_status[1] = STOPPED;
     }
 #else
-    G::current_action[0] = HOMING;
-    G::current_action[1] = HOMING;
+    current_action[0] = HOMING;
+    current_action[1] = HOMING;
 #endif
 
     // lcd setup
-    Draw::init(current_status, G::pos_unlock);
+    Draw::init(current_status, pos_unlock);
 
     // read from eeprom
-    G::vis_set_pos[0] = eeprom_read<uint16_t>(0);
-    G::vis_set_pos[1] = eeprom_read<uint16_t>(2);
+    vis_set_pos[0] = eeprom_read<uint16_t>(0);
+    vis_set_pos[1] = eeprom_read<uint16_t>(2);
 
-    steppers[0].set_pos = G::vis_set_pos[0];
-    steppers[1].set_pos = G::vis_set_pos[1];
+    steppers[0].set_pos = vis_set_pos[0];
+    steppers[1].set_pos = vis_set_pos[1];
 }
 
 void loop()
 {
-    // check switches ----------------------------------------------------------    
+    // check switches ----------------------------------------------------------
 #ifndef DISABLE_SWITCHES
     // detect falling edge on ON/OFF switch and selector switches
     // if ON/OFF & selector switch are on, init steppers
@@ -82,10 +82,10 @@ void loop()
 #endif
 
     // check if error is cleared ----------------------------------------------
-    if (G::clear_error)
+    if (clear_error)
     {
         Draw::clear_error();
-        G::clear_error = false;
+        clear_error = false;
         for (uint8_t i = 0; i < 2; i++)
             current_status[i] = (current_status[i] == Status::ERROR) ? fillers[i].empty() : current_status[i];
     }
@@ -102,8 +102,8 @@ void loop()
         current_status[i] = steppers[i].update(current_status[i]);
 
         // if the stepper is done homing + moving back to set_pos, empty the filler
-        if (current_status[i] == Status::DONE)
-            current_status[i] = fillers[i].empty();
+        // if (current_status[i] == Status::DONE)
+        //     current_status[i] = fillers[i].empty();
 
         // update fillers
         current_status[i] = fillers[i].update(current_status[i]);
@@ -131,13 +131,13 @@ void loop()
         if (millis() - last_draw_time < 1000)
             return;
 
-    const uint16_t act_val[2] = { steppers[0].actual_pos, steppers[1].actual_pos };
-    Draw::volume_indicator(act_val, G::vis_set_pos);
-    Draw::plus_minus_buttons(G::pos_unlock ? TFT_WHITE : TFT_DARKGREY);
-    Draw::lock_button(G::pos_unlock ? TFT_WHITE : TFT_RED);
+    const uint16_t act_val[2] = {steppers[0].actual_pos, steppers[1].actual_pos};
+    Draw::volume_indicator(act_val, vis_set_pos);
+    Draw::plus_minus_buttons(pos_unlock ? TFT_WHITE : TFT_DARKGREY);
+    Draw::lock_button(pos_unlock ? TFT_WHITE : TFT_RED);
 
     // if set_pos is not equal to the value in EEPROM, show save and cancel buttons
-    if (eeprom_read<uint32_t>(0) != *(uint32_t*)G::vis_set_pos)
+    if (eeprom_read<uint32_t>(0) != *(uint32_t *)vis_set_pos)
     {
         // if the buttons are not already drawn, draw them
         if (!not_saved)
@@ -149,8 +149,8 @@ void loop()
     else if (not_saved)
     {
         // set stepper set_pos to the value vis_set_pos
-        steppers[0].set_pos = G::vis_set_pos[0];
-        steppers[1].set_pos = G::vis_set_pos[1];
+        steppers[0].set_pos = vis_set_pos[0];
+        steppers[1].set_pos = vis_set_pos[1];
 
         // if the buttons are drawn, clear them
         Draw::clear_buttons();
@@ -158,8 +158,7 @@ void loop()
         not_saved = false;
     }
 
-
     // touch screen handling ---------------------------------------------
-    Touch::run_handles(handles, sizeof(handles) / sizeof(handles[0]));
+    Touch::run_handles(handles, sizeof(handles) / sizeof(handles[0]), touch_args);
     last_draw_time = millis();
 }
