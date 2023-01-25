@@ -25,13 +25,12 @@ Filler fillers[] = {
 uint16_t vis_set_pos[2];
 Status current_status[2]; // Current status
 
+// init touchscreen event handlers
+/// Flags
 bool not_saved = false;   // Flag for saving the volume to EEPROM
 bool pos_unlock = true;   // Flag for locking the position
 bool clear_error = false; // Flag for clearing error
 bool ack_flag = false;    // Flag for showing ack button
-
-// init touchscreen event handlers
-bool always_true = true;
 
 // args to pass to touch handlers
 constexpr struct Touch::Args touch_args PROGMEM = {
@@ -45,15 +44,15 @@ constexpr struct Touch::Args touch_args PROGMEM = {
 
 using namespace TH;
 // x, y, w, h, callback, condition
-constexpr Touch::Handle handles[] PROGMEM = {
+constexpr Touch::Handle handles[] = {
     {SCREEN_WIDTH / 4 - 70, SCREEN_HEIGHT / 2 - 25, 50, 50, inc_dec<0, -1>, pos_unlock},
     {SCREEN_WIDTH / 4 + 20, SCREEN_HEIGHT / 2 - 25, 50, 50, inc_dec<0, 1>, pos_unlock},
     {SCREEN_WIDTH / 4 * 3 - 70, SCREEN_HEIGHT / 2 - 25, 50, 50, inc_dec<1, -1>, pos_unlock},
     {SCREEN_WIDTH / 4 * 3 + 20, SCREEN_HEIGHT / 2 - 25, 50, 50, inc_dec<1, 1>, pos_unlock},
     {SCREEN_WIDTH / 4 - 50, SCREEN_HEIGHT - 50, 100, 50, apply, not_saved},
     {SCREEN_WIDTH / 4 * 3 - 50, SCREEN_HEIGHT - 50, 100, 50, cancel, not_saved},
-    {SCREEN_WIDTH / 2 - 25, SCREEN_HEIGHT / 2 - 25, 50, 50, lock, always_true},
+    {SCREEN_WIDTH / 2 - 25, SCREEN_HEIGHT / 2 - 25, 50, 50, lock, true},
     {SCREEN_WIDTH / 2 - 25, SCREEN_HEIGHT - 50, 50, 50, ack, ack_flag},
-    {SCREEN_WIDTH / 2 - 125, SCREEN_HEIGHT / 2 + 50, 100, 50, empty, always_true},
-    {SCREEN_WIDTH / 2 + 25, SCREEN_HEIGHT / 2 + 50, 100, 50, fill, always_true},
+    {SCREEN_WIDTH / 2 - 125, SCREEN_HEIGHT / 2 + 50, 100, 50, empty, true},
+    {SCREEN_WIDTH / 2 + 25, SCREEN_HEIGHT / 2 + 50, 100, 50, fill, true},
 };

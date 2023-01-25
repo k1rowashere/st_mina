@@ -37,7 +37,7 @@ struct Handle
     uint16_t w;
     uint16_t h;
     void (*callback)(const Touch::Args& args);
-    bool& condition;
+    const bool& condition;
 };
 
 TSPoint read();
